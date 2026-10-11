@@ -194,9 +194,13 @@ footer.site .pay-row span{background:#fff;border:1px solid var(--line);border-ra
 .struk-row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;padding:2px 0}
 .struk-div{border-top:1px dashed var(--line);margin:10px 0}
 @media print{
-  header.top,.wrap,.cart-fab,#toast,.modal .no-print{display:none !important}
-  .modal{position:static;background:none;padding:0}
-  .modal .box{box-shadow:none;max-height:none;width:100%}
+  body.p-struk header.top,body.p-struk .wrap,body.p-struk .cart-fab,body.p-struk #toast,body.p-struk .modal .no-print{display:none !important}
+  body.p-struk .modal{position:static;background:none;padding:0}
+  body.p-struk .modal .box{box-shadow:none;max-height:none;width:100%}
+  body.p-laporan header.top,body.p-laporan .tabs,body.p-laporan #login,
+  body.p-laporan #vOrders,body.p-laporan #vMenu,body.p-laporan #vSetting,
+  body.p-laporan .no-print{display:none !important}
+  body.p-laporan .box{box-shadow:none}
 }
 @media(max-width:640px){
   .hero{padding:24px 20px}

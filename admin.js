@@ -92,8 +92,18 @@ async function loadLaporan() {
       `<div class="stat-card st-c"><b>${L.lunas}</b><span>lunas • ${L.menunggu} menunggu</span></div>`;
     tbl.innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Tanggal</th><th>Pesanan</th><th>Omzet</th></tr>' +
       L.rows.map((r) => `<tr><td>${r.tanggal}</td><td>${r.pesanan}</td><td>${rp(r.omzet)}</td></tr>`).join('') +
-      `<tr><td><b>Total</b></td><td><b>${L.total_pesanan}</b></td><td><b>${rp(L.omzet)}</b></td></tr></table></div>`;
+      `<tr><td><b>Total</b></td><td><b>${L.total_pesanan}</b></td><td><b>${rp(L.omzet)}</b></td></tr></table></div>` +
+      '<h3 style="margin:16px 0 4px">Rincian item terjual • ' + nama + '</h3>' +
+      ((L.items && L.items.length)
+        ? '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Menu</th><th>Terjual</th><th>Omzet</th></tr>' +
+          L.items.map((it) => `<tr><td>${it.menu}</td><td>${it.qty} pcs</td><td>${rp(it.omzet)}</td></tr>`).join('') + '</table></div>'
+        : '<p class="muted">Belum ada item terjual pada periode ini.</p>');
   } catch (e) { tbl.innerHTML = '<div class="warn">Laporan gagal dimuat: ' + e.message + '</div>'; }
+}
+function printLaporan() {
+  document.body.classList.add('p-laporan');
+  window.print();
+  setTimeout(() => document.body.classList.remove('p-laporan'), 500);
 }
 async function setSt(id, status) { await apiPost({ action: 'adminUpdateOrder', token: token(), id, status }); loadOrders(); loadStats(); }
 async function setPay(id, payment_status) { await apiPost({ action: 'adminUpdateOrder', token: token(), id, payment_status }); loadOrders(); loadStats(); }

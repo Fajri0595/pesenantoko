@@ -58,13 +58,14 @@
     </div>
     <div id="vLaporan" style="display:none">
       <div class="sec"><div><h2>Laporan Penjualan</h2><p>Rekap harian, mingguan (7 hari), dan bulanan.</p></div></div>
-      <div class="row">
+      <div class="row no-print">
         <select id="fperiode" onchange="loadLaporan()" style="max-width:220px" aria-label="Periode">
           <option value="harian">Harian</option>
           <option value="mingguan">Mingguan</option>
           <option value="bulanan">Bulanan</option>
         </select>
         <button class="btn sm" onclick="loadLaporan()">Tampilkan</button>
+        <button class="btn sm ghost" onclick="printLaporan()">Cetak</button>
       </div>
       <div class="stat-grid" id="lapSum"></div>
       <div id="lapTable" style="margin-top:12px"></div>

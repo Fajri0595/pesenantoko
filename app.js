@@ -283,9 +283,14 @@ function showStruk(o) {
       <div>Tunjukkan kode ini ke counter</div></div>
       <p class="muted" style="text-align:center">Terima kasih sudah memesan di ${SETTINGS.store_name}</p>
     </div>
-    <div class="row no-print" style="margin-top:12px"><button class="btn ghost" onclick="window.print()">Cetak</button>
+    <div class="row no-print" style="margin-top:12px"><button class="btn ghost" onclick="printStruk()">Cetak</button>
     <button class="btn" onclick="lacakDariStruk()">Lacak Status</button></div>`;
   openM('mStruk');
+}
+function printStruk() {
+  document.body.classList.add('p-struk');
+  window.print();
+  setTimeout(() => document.body.classList.remove('p-struk'), 500);
 }
 function lacakDariStruk() { closeM('mStruk'); $('kode').value = lastOrder.code; lacak(); $('lacak').scrollIntoView({ behavior: 'smooth' }); }
 const STATUS = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan' };
