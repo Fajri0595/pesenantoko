@@ -15,7 +15,7 @@ function foodImg(m) {
   if (m && typeof m.foto === 'string' && m.foto.indexOf('http') === 0) return m.foto;
   const n = ((m && m.name) || '').toLowerCase();
   if (/milo|coklat|dinosaur/.test(n)) return FOOD_IMG.coklat;
-  if (/petak|gobak|boba|susu/.test(n)) return FOOD_IMG.boba;
+  if (/petak|gobak|boba|susu|aren/.test(n)) return FOOD_IMG.boba;
   if (/teklek|teh|jeruk|soda/.test(n)) return FOOD_IMG.esTeh;
   if (/es batu/.test(n)) return FOOD_IMG.esTeh;
   if (/pangsit|lumpia|rambutan|crispy/.test(n)) return FOOD_IMG.goreng;
