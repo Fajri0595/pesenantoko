@@ -18,8 +18,18 @@ function toast(msg) {
 async function init() {
   if (!isConfigured()) $('cfgWarn').style.display = 'block';
   try {
-    const [m, s, k] = await Promise.all([apiGet('menu'), apiGet('settings'), apiGet('kategori')]);
-    MENU = m; applySettings(s);
+    const [m, k] = await Promise.all([apiGet('menu'), apiGet('kategori')]);
+    MENU = m;
+    // Settings opsional: backend lama yang belum redeploy tidak punya action ini.
+    // Fallback ke endpoint payments lama agar menu tetap tampil.
+    let s = null;
+    try { s = await apiGet('settings'); } catch (e) { s = null; }
+    if (!s) {
+      let p = null;
+      try { p = await apiGet('payments'); } catch (e2) { p = null; }
+      s = p ? { payments: p } : {};
+    }
+    applySettings(s);
     const sel = $('kategori');
     k.forEach((c) => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
     sel.onchange = () => { render(); syncPills(); };
