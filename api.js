@@ -35,12 +35,12 @@ const DEMO_PAYMENTS = {
   CASH: { label: 'Cash di Counter', desc: 'Pesan dulu, bayar tunai saat ambil' },
 };
 const DEMO_MENU = [
-  { id: 1, name: 'Mie Gacoan Lv 1', category: 'Mie', price: 11000, description: 'Manis gurih, level 1 pemula.', emoji: '🍜', is_available: 1 },
-  { id: 2, name: 'Mie Gacoan Lv 4', category: 'Mie', price: 11000, description: 'Level favorit.', emoji: '🌶️', is_available: 1 },
-  { id: 6, name: 'Siomay Ayam', category: 'Dimsum', price: 16000, description: 'Isi 3, saus mayo.', emoji: '🥟', is_available: 1 },
-  { id: 8, name: 'Udang Rambutan', category: 'Dimsum', price: 17000, description: 'Bola udang crispy isi 3.', emoji: '🍤', is_available: 1 },
-  { id: 11, name: 'Es Gobak Sodor', category: 'Minuman', price: 9000, description: 'Best seller.', emoji: '🥤', is_available: 1 },
-  { id: 13, name: 'Es Teklek', category: 'Minuman', price: 8000, description: 'Teh + jeruk + soda.', emoji: '🍹', is_available: 1 },
+  { id: 1, name: 'Mie Gacoan Lv 1', category: 'Mie', price: 11000, description: 'Manis gurih, level 1 pemula.', emoji: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=800&auto=format&fit=crop', is_available: 1 },
+  { id: 2, name: 'Mie Gacoan Lv 4', category: 'Mie', price: 11000, description: 'Level favorit.', emoji: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?q=80&w=800&auto=format&fit=crop', is_available: 1 },
+  { id: 6, name: 'Siomay Ayam', category: 'Dimsum', price: 16000, description: 'Isi 3, saus mayo.', emoji: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?q=80&w=800&auto=format&fit=crop', is_available: 1 },
+  { id: 8, name: 'Udang Rambutan', category: 'Dimsum', price: 17000, description: 'Bola udang crispy isi 3.', emoji: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=800&auto=format&fit=crop', is_available: 1 },
+  { id: 11, name: 'Es Gobak Sodor', category: 'Minuman', price: 9000, description: 'Best seller.', emoji: 'https://images.unsplash.com/photo-1558857563-b371033873b8?q=80&w=800&auto=format&fit=crop', is_available: 1 },
+  { id: 13, name: 'Es Teklek', category: 'Minuman', price: 8000, description: 'Teh + jeruk + soda.', emoji: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=800&auto=format&fit=crop', is_available: 1 },
 ];
 let demoSeq = 1;
 function demoGet(action, params) {

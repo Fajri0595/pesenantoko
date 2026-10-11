@@ -1,10 +1,10 @@
-// Frontend publik (GitHub Pages) -> Backend GAS — UI v2
+// Frontend publik (GitHub Pages) -> Backend GAS — v3: thumbnail foto, tanpa ikon
 let MENU = [], CART = [];
 try { CART = JSON.parse(localStorage.getItem('cart') || '[]'); } catch (e) { CART = []; }
 let PAYMENTS = {}, paySel = 'QRIS', lastOrder = null, lastLacak = null, showBayarRef = null;
 const rp = (n) => 'Rp' + (n || 0).toLocaleString('id-ID');
 const $ = (id) => document.getElementById(id);
-const PAY_ICON = { QRIS: '⊞', GOPAY: '💚', OVO: '💜', DANA: '💙', CASH: '💵' };
+const PAY_SHORT = { QRIS: 'QR', GOPAY: 'GP', OVO: 'OV', DANA: 'DN', CASH: 'CS' };
 
 function toast(msg) {
   const box = $('toast'); if (!box) return;
@@ -25,13 +25,6 @@ async function init() {
   } catch (e) {
     $('grid').innerHTML = '<p style="color:red">Gagal memuat menu: ' + e.message + '</p>';
   }
-}
-function picClass(cat) {
-  cat = (cat || '').toLowerCase();
-  if (cat.includes('dimsum')) return 'pic-dimsum';
-  if (cat.includes('minum')) return 'pic-minuman';
-  if (cat.includes('topping')) return 'pic-topping';
-  return 'pic-mie';
 }
 function buildPills(kats) {
   const box = $('pills'); if (!box) return;
@@ -54,22 +47,23 @@ function render() {
   const q = $('q').value.toLowerCase();
   const kat = $('kategori').value;
   const list = MENU.filter((m) => (!kat || m.category === kat) && m.name.toLowerCase().includes(q));
-  $('menuCount').textContent = list.length + ' menu' + (kat ? ' • ' + kat : '') + ' • harga sudah termasuk pajak resto';
+  $('menuCount').textContent = list.length + ' menu' + (kat ? ' • ' + kat : '');
   const g = $('grid'); g.innerHTML = '';
   list.forEach((m) => {
     const d = document.createElement('div'); d.className = 'card';
-    d.innerHTML = `<div class="pic ${picClass(m.category)}">${m.emoji || '🍜'}</div><div class="body">
+    const img = foodImg(m);
+    d.innerHTML = `<div class="thumb"><img src="${img}" alt="${m.name}" loading="lazy" onerror="this.remove()"></div><div class="body">
       <div class="cat">${m.category}</div><h3>${m.name}</h3>
       <div class="desc">${m.description || ''}</div>
-      <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge">ready</span></div>
-      <input id="lv-${m.id}" class="level" type="text" placeholder="Level / note — cth. Lv 4, es sedikit" maxlength="20">
+      <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge">Tersedia</span></div>
+      <input id="lv-${m.id}" class="level" type="text" placeholder="Level / catatan — cth. Lv 4" maxlength="20">
       <div class="act">
         <div class="qty"><button onclick="addCart(${m.id},-1)" aria-label="kurang">−</button><button onclick="addCart(${m.id},1)" aria-label="tambah">+</button></div>
-        <button class="add" onclick="addCart(${m.id},1)">＋ Tambah</button>
+        <button class="add" onclick="addCart(${m.id},1)">Tambah</button>
       </div></div>`;
     g.appendChild(d);
   });
-  if (!g.children.length) g.innerHTML = '<div class="empty">😕 Menu tidak ditemukan. Coba kata kunci lain.</div>';
+  if (!g.children.length) g.innerHTML = '<div class="empty">Menu tidak ditemukan. Coba kata kunci lain.</div>';
 }
 function addCart(id, delta) {
   const m = MENU.find((x) => x.id === id); if (!m) return;
@@ -78,7 +72,7 @@ function addCart(id, delta) {
     const same = CART.find((c) => c.menu_id === id && (c.level || '') === lv);
     if (same) same.qty = Math.min(20, same.qty + 1);
     else CART.push({ menu_id: id, name: m.name, price: m.price, qty: 1, level: lv });
-    toast('✓ ' + m.name + ' masuk keranjang');
+    toast(m.name + ' masuk keranjang');
   } else {
     const i = CART.findIndex((c) => c.menu_id === id);
     if (i > -1) { CART[i].qty--; if (CART[i].qty <= 0) CART.splice(i, 1); }
@@ -97,12 +91,12 @@ function renderCart() {
   CART.forEach((c, i) => {
     sub += c.price * c.qty;
     const d = document.createElement('div'); d.className = 'cart-line';
-    d.innerHTML = `<div><b>${c.name}</b><br><small class="muted">${c.level ? c.level + ' • ' : ''}${rp(c.price)} × ${c.qty} = <b>${rp(c.price * c.qty)}</b></small></div>
+    d.innerHTML = `<div><b>${c.name}</b><br><small class="muted">${c.level ? c.level + ' • ' : ''}${rp(c.price)} x ${c.qty} = <b>${rp(c.price * c.qty)}</b></small></div>
       <div class="qty"><button onclick="chQty(${i},-1)">−</button><span><b>${c.qty}</b></span><button onclick="chQty(${i},1)">+</button>
-      <button onclick="rmItem(${i})" title="hapus">🗑</button></div>`;
+      <button onclick="rmItem(${i})" title="hapus">Hapus</button></div>`;
     box.appendChild(d);
   });
-  if (!CART.length) box.innerHTML = '<div class="empty">🛒 Keranjang kosong.<br>Pilih mie + dimsum favoritmu dulu.</div>';
+  if (!CART.length) box.innerHTML = '<div class="empty">Keranjang kosong.<br>Pilih menu favorit terlebih dahulu.</div>';
   const total = sub + (CART.length ? 2000 : 0);
   $('csub').textContent = rp(sub);
   $('ctotal').textContent = rp(total);
@@ -117,7 +111,7 @@ function renderPays() {
   Object.entries(PAYMENTS).forEach(([k, v]) => {
     const d = document.createElement('div');
     d.className = 'payopt' + (k === paySel ? ' sel' : '');
-    d.innerHTML = `<div class="pay-ico">${PAY_ICON[k] || '💳'}</div><div><b>${v.label}</b><br><small class="muted">${v.desc}</small></div>
+    d.innerHTML = `<div class="pay-name">${PAY_SHORT[k] || 'BY'}</div><div><b>${v.label}</b><br><small class="muted">${v.desc}</small></div>
       <input type="radio" ${k === paySel ? 'checked' : ''} style="margin-left:auto;width:auto">`;
     d.onclick = () => { paySel = k; renderPays(); };
     box.appendChild(d);
@@ -127,7 +121,7 @@ function openCheckout() {
   if (!CART.length) { toast('Keranjang masih kosong'); return; }
   toggleCart(false);
   const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
-  $('coSum').innerHTML = `🧾 ${CART.length} jenis item • Subtotal ${rp(sub)} + service Rp2.000 = <b>${rp(sub + 2000)}</b>`;
+  $('coSum').innerHTML = `${CART.length} jenis item • Subtotal ${rp(sub)} + service Rp2.000 = <b>${rp(sub + 2000)}</b>`;
   openM('mCheckout');
 }
 function openM(id) { $(id).classList.add('open'); }
@@ -138,9 +132,9 @@ async function buatPesanan() {
   const customer_name = $('nama').value.trim();
   const customer_phone = $('hp').value.trim();
   const note = $('catatan').value.trim();
-  if (!customer_name || !customer_phone) { toast('Isi nama & HP dulu'); return; }
+  if (!customer_name || !customer_phone) { toast('Isi nama dan HP terlebih dahulu'); return; }
   if (!CART.length) return;
-  const btn = $('btnOrder'); btn.disabled = true; btn.textContent = 'Memproses... ⏳';
+  const btn = $('btnOrder'); btn.disabled = true; btn.textContent = 'Memproses...';
   try {
     const j = await apiPost({
       action: 'createOrder', customer_name, customer_phone, note,
@@ -148,11 +142,11 @@ async function buatPesanan() {
     });
     lastOrder = j.order;
     CART = []; saveCart(); closeM('mCheckout');
-    if (j.demo) toast('Mode DEMO — hubungkan GAS untuk simpan asli');
+    if (j.demo) toast('Mode demo — hubungkan GAS untuk menyimpan asli');
     if (lastOrder.payment_method === 'CASH') showStruk(lastOrder);
     else showBayar(lastOrder);
   } catch (e) { toast(e.message); }
-  btn.disabled = false; btn.textContent = 'Buat Pesanan →';
+  btn.disabled = false; btn.textContent = 'Buat Pesanan';
 }
 function qrFake(code) {
   let s = ''; const ch = '█▓▒░<>+*#$%&';
@@ -164,30 +158,30 @@ function showBayar(o) {
   $('bBody').innerHTML = `
     <p>Kode <b>${o.code}</b> • Antrian <b>${o.queue_no}</b></p>
     <div class="qrbox"><pre style="text-align:left;font-size:10px">${qrFake(o.code)}</pre>
-    <div style="font-size:18px;font-weight:800">${o.payment_method} • ${rp(o.total)}</div><small class="muted">QR simulasi — tidak ada uang asli</small></div>
-    <p><small class="muted">${PAYMENTS[o.payment_method].desc}. Klik tombol di bawah seolah kamu sudah bayar di aplikasi aslinya.</small></p>
+    <div style="font-size:18px;font-weight:800">${o.payment_method} • ${rp(o.total)}</div><small>QR simulasi — tidak ada uang asli</small></div>
+    <p><small class="muted">${PAYMENTS[o.payment_method].desc}. Tekan tombol di bawah seolah sudah membayar di aplikasi aslinya.</small></p>
     <div class="row"><button class="btn ghost" onclick="closeM('mBayar')">Bayar Nanti</button>
-    <button id="btnPay" class="btn green" onclick="simPay('${o.code}')">Saya Sudah Bayar ✓</button></div>`;
+    <button id="btnPay" class="btn green" onclick="simPay('${o.code}')">Saya Sudah Bayar</button></div>`;
   openM('mBayar');
 }
 async function simPay(code) {
   const b = $('btnPay');
-  b.disabled = true; b.textContent = 'Memverifikasi... ⏳';
+  b.disabled = true; b.textContent = 'Memverifikasi...';
   await new Promise((r) => setTimeout(r, 1800));
   try {
     const j = await apiPost({ action: 'payOrder', code });
-    closeM('mBayar'); showStruk(j.order); toast('Pembayaran lunas ✓');
-  } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Bayar ✓'; toast(e.message); }
+    closeM('mBayar'); showStruk(j.order); toast('Pembayaran lunas');
+  } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Bayar'; toast(e.message); }
 }
 function showStruk(o) {
   $('sBody').innerHTML = `
     <div class="qrbox" style="margin-bottom:12px"><div class="muted">KODE PENGAMBILAN</div>
     <div style="font-size:30px;font-weight:800;letter-spacing:2px">${o.code}</div>
     <div>Antrian <b>${o.queue_no}</b> • Estimasi <b>15–20 mnt</b></div></div>
-    <p>${o.payment_method === 'CASH' ? '💵 Bayar <b>Cash ' + rp(o.total) + '</b> saat ambil di counter.' : '✅ Sudah <b>LUNAS</b> (' + o.payment_method + ').'}</p>
-    <table>${o.items.map((i) => `<tr><td>${i.qty}× ${i.menu_name} <small class="muted">${i.level || ''}</small></td><td style="text-align:right">${rp(i.price * i.qty)}</td></tr>`).join('')}
+    <p>${o.payment_method === 'CASH' ? 'Bayar <b>Cash ' + rp(o.total) + '</b> saat ambil di counter.' : 'Sudah <b>LUNAS</b> (' + o.payment_method + ').'}</p>
+    <table>${o.items.map((i) => `<tr><td>${i.qty} x ${i.menu_name} <small class="muted">${i.level || ''}</small></td><td style="text-align:right">${rp(i.price * i.qty)}</td></tr>`).join('')}
     <tr><td>Service</td><td style="text-align:right">${rp(o.service_fee)}</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>${rp(o.total)}</b></td></tr></table>
-    <p><small class="muted">Tunjukkan kode ini ke counter saat mengambil. Screenshot struk ini.</small></p>`;
+    <p><small class="muted">Tunjukkan kode ini ke counter saat mengambil.</small></p>`;
   openM('mStruk');
 }
 function lacakDariStruk() { closeM('mStruk'); $('kode').value = lastOrder.code; lacak(); $('lacak').scrollIntoView({ behavior: 'smooth' }); }
@@ -195,7 +189,7 @@ const STATUS = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap
 async function lacak() {
   const code = $('kode').value.trim().toUpperCase();
   const box = $('hasil');
-  if (!code) { toast('Isi kode dulu, cth GC-XXXXXX'); return; }
+  if (!code) { toast('Isi kode terlebih dahulu, contoh GC-XXXXXX'); return; }
   box.innerHTML = '<p class="muted">Mencari pesanan...</p>';
   try {
     const j = await apiGet('order', { code });
@@ -207,15 +201,15 @@ async function lacak() {
     }).join(' → ');
     box.innerHTML = `<div class="track-card">
       <div class="row" style="justify-content:space-between"><b style="font-size:18px">${o.code}</b>
-      <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${o.payment_status === 'paid' ? '✓ LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI COUNTER' : 'BELUM BAYAR'}</span></div>
+      <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${o.payment_status === 'paid' ? 'LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI COUNTER' : 'BELUM BAYAR'}</span></div>
       <div class="muted">${o.queue_no} • ${o.payment_method} • ${o.customer_name} • ${rp(o.total)}</div>
       <div class="timeline">${pills}</div>
       <small class="muted">${o.created_at}</small>
-      ${o.payment_method !== 'CASH' && o.payment_status !== 'paid' && o.status !== 'dibatalkan' ? `<br><button class="btn" style="margin-top:8px" onclick="showBayar(lastLacak)">Bayar Sekarang →</button>` : ''}
+      ${o.payment_method !== 'CASH' && o.payment_status !== 'paid' && o.status !== 'dibatalkan' ? `<br><button class="btn" style="margin-top:8px" onclick="showBayar(lastLacak)">Bayar Sekarang</button>` : ''}
     </div>`;
     lastLacak = o;
     if (o.payment_method !== 'CASH' && o.payment_status !== 'paid') showBayarRef = o;
-  } catch (e) { box.innerHTML = `<div class="warn">⚠️ ${e.message}</div>`; }
+  } catch (e) { box.innerHTML = `<div class="warn">${e.message}</div>`; }
 }
 document.addEventListener('click', (e) => { if (e.target.textContent.includes('Bayar Sekarang') && showBayarRef) showBayar(showBayarRef); });
 document.querySelectorAll('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); }));
