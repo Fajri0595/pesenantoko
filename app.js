@@ -160,16 +160,64 @@ function qrFake(code) {
   for (let i = 0; i < 96; i++) s += ch[Math.floor(Math.random() * ch.length)] + (i % 12 === 11 ? '\n' : '');
   return `SIMULASI-${code}\n` + s;
 }
+function qrFake(code) {
+  let s = ''; const ch = '█▓▒░<>+*#$%&';
+  for (let i = 0; i < 96; i++) s += ch[Math.floor(Math.random() * ch.length)] + (i % 12 === 11 ? '\n' : '');
+  return `SIMULASI-${code}\n` + s;
+}
+// --- Simulasi semirip pembayaran asli: QR scan, nomor referensi, instruksi, countdown ---
+let payTimer = null;
+function stopPayTimer() { if (payTimer) { clearInterval(payTimer); payTimer = null; } }
+function payRef(code, method) {
+  let h = 0; const s = code + '|' + method;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000000;
+  const d = String(h).padStart(8, '0');
+  if (method === 'QRIS') return 'NMID ID1024' + d;
+  if (method === 'GOPAY') return '0812 ' + d.slice(0, 4) + ' ' + d.slice(4);
+  if (method === 'OVO') return '0813 ' + d.slice(0, 4) + ' ' + d.slice(4);
+  return '0817 ' + d.slice(0, 4) + ' ' + d.slice(4);
+}
+const PAY_STEPS = {
+  QRIS: ['Buka m-banking atau e-wallet apa pun', 'Pilih Bayar atau Scan QR', 'Scan kode QR di atas', 'Pastikan nama UMKM MANDIRI dan nominal sesuai, lalu konfirmasi'],
+  GOPAY: ['Buka aplikasi GoPay', 'Pilih Bayar ke nomor tujuan di atas', 'Masukkan nominal persis seperti tagihan', 'Konfirmasi dengan PIN GoPay'],
+  OVO: ['Buka aplikasi OVO', 'Pilih Transfer ke nomor tujuan di atas', 'Masukkan nominal persis seperti tagihan', 'Konfirmasi dengan PIN OVO'],
+  DANA: ['Buka aplikasi DANA', 'Pilih Kirim ke nomor tujuan di atas', 'Masukkan nominal persis seperti tagihan', 'Konfirmasi dengan PIN DANA'],
+};
 function showBayar(o) {
-  $('bTitle').textContent = `Bayar ${PAYMENTS[o.payment_method].label} — ${rp(o.total)}`;
+  stopPayTimer();
+  const label = PAYMENTS[o.payment_method].label;
+  $('bTitle').textContent = `Bayar ${label} — ${rp(o.total)}`;
+  const ref = payRef(o.code, o.payment_method);
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent('UMKM-MANDIRI|' + o.code + '|' + o.total);
+  const steps = (PAY_STEPS[o.payment_method] || PAY_STEPS.QRIS).map((s, i) => `<div class="struk-row"><span>Langkah ${i + 1}</span><span>${s}</span></div>`).join('');
+  const batas = Date.now() + 15 * 60 * 1000;
   $('bBody').innerHTML = `
-    <p>Kode <b>${o.code}</b> • Antrian <b>${o.queue_no}</b></p>
-    <div class="qrbox"><pre style="text-align:left;font-size:10px">${qrFake(o.code)}</pre>
-    <div style="font-size:18px;font-weight:800">${o.payment_method} • ${rp(o.total)}</div><small>QR simulasi — tidak ada uang asli</small></div>
-    <p><small class="muted">${PAYMENTS[o.payment_method].desc}. Tekan tombol di bawah seolah sudah membayar di aplikasi aslinya.</small></p>
-    <div class="row"><button class="btn ghost" onclick="closeM('mBayar')">Bayar Nanti</button>
+    <div class="struk-row"><span>Merchant</span><b>UMKM MANDIRI</b></div>
+    <div class="struk-row"><span>Kode pesanan</span><b>${o.code}</b></div>
+    <div class="struk-row"><span>Antrian</span><b>${o.queue_no}</b></div>
+    <div class="struk-row"><span>${o.payment_method === 'QRIS' ? 'NMID' : 'Nomor tujuan'}</span><b>${ref}</b></div>
+    <div class="struk-row"><span>Nominal</span><b>${rp(o.total)}</b></div>
+    <div class="struk-row"><span>Batas bayar</span><b id="payCount">15:00</b></div>
+    <div class="qrbox" style="margin-top:10px">
+      <img class="qr-img" src="${qrUrl}" alt="Kode QR pembayaran" onerror="this.style.display='none';document.getElementById('qrFb').style.display='block'">
+      <pre id="qrFb" style="display:none;text-align:left;font-size:10px">${qrFake(o.code)}</pre>
+      <div style="font-size:16px;font-weight:800;margin-top:8px">${rp(o.total)}</div>
+      <small>Simulasi — tidak ada uang asli berpindah</small></div>
+    <div style="margin-top:10px">${steps}</div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" onclick="stopPayTimer();closeM('mBayar')">Bayar Nanti</button>
     <button id="btnPay" class="btn green" onclick="simPay('${o.code}')">Saya Sudah Bayar</button></div>`;
   openM('mBayar');
+  payTimer = setInterval(() => {
+    const sisa = Math.max(0, Math.floor((batas - Date.now()) / 1000));
+    const el = $('payCount');
+    if (el) el.textContent = String(Math.floor(sisa / 60)).padStart(2, '0') + ':' + String(sisa % 60).padStart(2, '0');
+    if (sisa <= 0) {
+      stopPayTimer();
+      const b = $('btnPay');
+      if (b) { b.disabled = true; b.textContent = 'Kedaluarsa'; }
+      toast('Waktu bayar habis — silakan buat pesanan baru');
+    }
+  }, 1000);
 }
 async function simPay(code) {
   const b = $('btnPay');
@@ -177,7 +225,7 @@ async function simPay(code) {
   await new Promise((r) => setTimeout(r, 1800));
   try {
     const j = await apiPost({ action: 'payOrder', code });
-    closeM('mBayar'); showStruk(j.order); toast('Pembayaran lunas');
+    stopPayTimer(); closeM('mBayar'); showStruk(j.order); toast('Pembayaran lunas');
   } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Bayar'; toast(e.message); }
 }
 function showStruk(o) {

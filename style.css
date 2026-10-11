@@ -152,6 +152,8 @@ input:focus,select:focus{outline:2px solid rgba(62,107,79,.25);border-color:var(
 .pay-name{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--brand-soft);color:var(--brand-d);flex-shrink:0}
 .qrbox{background:#2e2a23;color:#f7f3ec;border-radius:16px;padding:18px;text-align:center}
 .qrbox pre{background:#453e33;border-radius:12px;padding:12px;overflow:auto;color:#f7f3ec}
+.qr-img{width:200px;height:200px;max-width:100%;border-radius:12px;background:#fff;padding:8px;display:block;margin:0 auto}
+#payCount{color:var(--brand-d);font-weight:800}
 .timeline{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap;align-items:center}
 .pill{padding:7px 12px;border-radius:999px;background:#efe8d8;font-size:12.5px;font-weight:700;color:#6f675c}
 .pill.on{background:var(--green-bg);color:var(--green)}
