@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Gacoan KW</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header><div class="logo">🔧 ADMIN</div><div class="tag">KATALOG + PESANAN</div>
+<nav><a href="./index.html">Publik</a><button id="btnOut" style="display:none" onclick="logout()">Logout</button></nav></header>
+<div class="wrap">
+  <div id="cfgWarn" class="box" style="display:none;border:1px solid #d21f26">
+    ⚠️ Isi <code>GAS_API_URL</code> di <code>frontend/config.js</code> agar admin terhubung ke GAS.
+  </div>
+  <div id="login" class="box" style="max-width:380px;margin:30px auto">
+    <h2>Login Admin</h2>
+    <p><small>Default: <b>admin / admin123</b> (sesuai Code.gs)</small></p>
+    <label>Username</label><input id="u" type="text" value="admin">
+    <label>Password</label><input id="p" type="password" value="admin123">
+    <button class="btn" style="margin-top:10px;width:100%" onclick="login()">Masuk</button>
+    <p id="msg" style="color:red"></p>
+  </div>
+  <div id="main" style="display:none">
+    <div class="steps" id="stats"></div>
+    <div class="row">
+      <button class="btn" onclick="tab('orders')">Pesanan</button>
+      <button class="btn ghost" onclick="tab('menu')">Katalog Menu</button>
+      <select id="fstat" onchange="loadOrders()" style="margin-left:auto">
+        <option value="">Semua status</option>
+        <option value="menunggu_pembayaran">Menunggu bayar</option>
+        <option value="dimasak">Dimasak</option>
+        <option value="siap_diambil">Siap diambil</option>
+        <option value="selesai">Selesai</option>
+        <option value="dibatalkan">Dibatalkan</option>
+      </select>
+    </div>
+    <div id="vOrders"></div>
+    <div id="vMenu" style="display:none">
+      <h3>Tambah / Edit Menu</h3>
+      <div class="box">
+        <input id="mid" type="hidden">
+        <div class="row">
+          <div style="flex:2"><label>Nama</label><input id="mname" type="text" placeholder="Mie Gacoan Lv 4"></div>
+          <div style="flex:1"><label>Kategori</label><input id="mcat" type="text" placeholder="Mie/Dimsum/Minuman/Topping"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>Harga</label><input id="mprice" type="number" value="11000"></div>
+          <div style="flex:1"><label>Emoji</label><input id="memoji" type="text" value="🍜"></div>
+          <div style="flex:1"><label>Tersedia?</label><select id="mavail"><option value="1">Ya</option><option value="0">Tidak</option></select></div>
+        </div>
+        <label>Deskripsi</label><input id="mdesc" type="text">
+        <div class="row" style="margin-top:8px"><button class="btn" onclick="saveMenu()">Simpan</button>
+        <button class="btn ghost" onclick="resetForm()">Reset</button></div>
+      </div>
+      <div id="mlist"></div>
+    </div>
+  </div>
+</div>
+<script src="./config.js"></script>
+<script src="./api.js"></script>
+<script src="./admin.js"></script>
+</body>
+</html>
