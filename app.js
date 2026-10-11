@@ -2,6 +2,9 @@
 let MENU = [], CART = [];
 try { CART = JSON.parse(localStorage.getItem('cart') || '[]'); } catch (e) { CART = []; }
 let PAYMENTS = {}, paySel = 'QRIS', lastOrder = null, lastLacak = null, showBayarRef = null;
+let SETTINGS = { store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • TANPA ANTRI', service_fee: 2000, estimasi: '15–20 menit' };
+const fee = () => SETTINGS.service_fee || 0;
+const storeSlug = () => SETTINGS.store_name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'TOKO';
 const rp = (n) => 'Rp' + (n || 0).toLocaleString('id-ID');
 const $ = (id) => document.getElementById(id);
 const PAY_SHORT = { QRIS: 'QR', GOPAY: 'GP', OVO: 'OV', DANA: 'DN', CASH: 'CS' };
@@ -15,8 +18,8 @@ function toast(msg) {
 async function init() {
   if (!isConfigured()) $('cfgWarn').style.display = 'block';
   try {
-    const [m, p, k] = await Promise.all([apiGet('menu'), apiGet('payments'), apiGet('kategori')]);
-    MENU = m; PAYMENTS = p;
+    const [m, s, k] = await Promise.all([apiGet('menu'), apiGet('settings'), apiGet('kategori')]);
+    MENU = m; applySettings(s);
     const sel = $('kategori');
     k.forEach((c) => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
     sel.onchange = () => { render(); syncPills(); };
@@ -25,6 +28,23 @@ async function init() {
   } catch (e) {
     $('grid').innerHTML = '<p style="color:red">Gagal memuat menu: ' + e.message + '</p>';
   }
+}
+function applySettings(s) {
+  s = s || {};
+  if (s.store_name) SETTINGS.store_name = String(s.store_name);
+  if (s.tagline) SETTINGS.tagline = String(s.tagline);
+  if (s.service_fee !== undefined) SETTINGS.service_fee = Math.max(0, parseInt(s.service_fee) || 0);
+  if (s.estimasi) SETTINGS.estimasi = String(s.estimasi);
+  if (s.payments && Object.keys(s.payments).length) {
+    PAYMENTS = s.payments;
+    if (!PAYMENTS[paySel]) paySel = Object.keys(PAYMENTS)[0];
+  }
+  document.title = SETTINGS.store_name + ' — Takeaway Tanpa Antri';
+  const bn = $('brandName'); if (bn) bn.textContent = SETTINGS.store_name;
+  const bt = $('brandTag'); if (bt) bt.textContent = SETTINGS.tagline;
+  const fb = $('footBrand'); if (fb) fb.textContent = SETTINGS.store_name;
+  const ec = $('estChip'); if (ec) ec.textContent = 'Siap sekitar ' + SETTINGS.estimasi;
+  const sl = $('svcLabel'); if (sl) sl.textContent = rp(fee());
 }
 function buildPills(kats) {
   const box = $('pills'); if (!box) return;
@@ -101,7 +121,7 @@ function renderCart() {
     box.appendChild(d);
   });
   if (!CART.length) box.innerHTML = '<div class="empty">Keranjang kosong.<br>Pilih menu favorit terlebih dahulu.</div>';
-  const total = sub + (CART.length ? 2000 : 0);
+  const total = sub + (CART.length ? fee() : 0);
   $('csub').textContent = rp(sub);
   $('ctotal').textContent = rp(total);
   $('fabTotal').textContent = rp(total);
@@ -128,7 +148,7 @@ function renderPays() {
 function openCheckout() {
   if (!CART.length) { toast('Keranjang masih kosong'); return; }
   const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
-  $('coSum').innerHTML = `${CART.length} jenis item • Subtotal ${rp(sub)} + service Rp2.000 = <b>${rp(sub + 2000)}</b>`;
+  $('coSum').innerHTML = `${CART.length} jenis item • Subtotal ${rp(sub)} + service ${rp(fee())} = <b>${rp(sub + fee())}</b>`;
   openM('mCheckout');
 }
 function openM(id) { $(id).classList.add('open'); }
@@ -188,11 +208,11 @@ function showBayar(o) {
   const label = PAYMENTS[o.payment_method].label;
   $('bTitle').textContent = `Bayar ${label} — ${rp(o.total)}`;
   const ref = payRef(o.code, o.payment_method);
-  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent('UMKM-MANDIRI|' + o.code + '|' + o.total);
-  const steps = (PAY_STEPS[o.payment_method] || PAY_STEPS.QRIS).map((s, i) => `<div class="struk-row"><span>Langkah ${i + 1}</span><span>${s}</span></div>`).join('');
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(storeSlug() + '|' + o.code + '|' + o.total);
+  const steps = (PAY_STEPS[o.payment_method] || PAY_STEPS.QRIS).map((s, i) => `<div class="struk-row"><span>Langkah ${i + 1}</span><span>${s.split('UMKM MANDIRI').join(SETTINGS.store_name)}</span></div>`).join('');
   const batas = Date.now() + 15 * 60 * 1000;
   $('bBody').innerHTML = `
-    <div class="struk-row"><span>Merchant</span><b>UMKM MANDIRI</b></div>
+    <div class="struk-row"><span>Merchant</span><b>${SETTINGS.store_name}</b></div>
     <div class="struk-row"><span>Kode pesanan</span><b>${o.code}</b></div>
     <div class="struk-row"><span>Antrian</span><b>${o.queue_no}</b></div>
     <div class="struk-row"><span>${o.payment_method === 'QRIS' ? 'NMID' : 'Nomor tujuan'}</span><b>${ref}</b></div>
@@ -234,7 +254,7 @@ function showStruk(o) {
   const tgl = o.created_at || new Date().toLocaleString('id-ID');
   $('sBody').innerHTML = `
     <div id="strukPrint" class="struk">
-      <div class="struk-head"><b>UMKM MANDIRI</b><span>Takeaway Tanpa Antri</span></div>
+      <div class="struk-head"><b>${SETTINGS.store_name}</b><span>Takeaway Tanpa Antri</span></div>
       <div class="struk-row"><span>No. Struk</span><b>${o.code}</b></div>
       <div class="struk-row"><span>Antrian</span><b>${o.queue_no}</b></div>
       <div class="struk-row"><span>Tanggal</span><span>${tgl}</span></div>
@@ -248,10 +268,10 @@ function showStruk(o) {
       <div class="struk-div"></div>
       <div class="struk-row"><span>Metode</span><b>${payLabel}</b></div>
       <div class="struk-row"><span>Status bayar</span><span class="badge ${lunas ? 'paid' : 'pending'}">${lunas ? 'LUNAS' : (o.payment_method === 'CASH' ? 'BAYAR DI COUNTER' : 'MENUNGGU')}</span></div>
-      <div class="struk-row"><span>Estimasi siap</span><span>15–20 menit</span></div>
+      <div class="struk-row"><span>Estimasi siap</span><span>${SETTINGS.estimasi}</span></div>
       <div class="qrbox" style="margin-top:12px"><div style="font-size:26px;font-weight:800;letter-spacing:2px">${o.code}</div>
       <div>Tunjukkan kode ini ke counter</div></div>
-      <p class="muted" style="text-align:center">Terima kasih sudah memesan di UMKM Mandiri</p>
+      <p class="muted" style="text-align:center">Terima kasih sudah memesan di ${SETTINGS.store_name}</p>
     </div>
     <div class="row no-print" style="margin-top:12px"><button class="btn ghost" onclick="window.print()">Cetak</button>
     <button class="btn" onclick="lacakDariStruk()">Lacak Status</button></div>`;

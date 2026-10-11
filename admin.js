@@ -5,12 +5,24 @@ const ST_LABEL = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', si
 
 async function me() {
   if (!isConfigured()) document.getElementById('cfgWarn').style.display = 'block';
+  applyBrand();
   if (token()) {
     document.getElementById('login').style.display = 'none';
     document.getElementById('main').style.display = 'block';
     document.getElementById('btnOut').style.display = 'inline';
     loadStats(); loadOrders(); loadMenu();
   }
+}
+// Nama toko di header admin mengikuti Settings (tanpa login)
+async function applyBrand() {
+  try {
+    const s = await apiGet('settings');
+    if (s.store_name) {
+      document.title = 'Admin — ' + s.store_name;
+      const logos = document.querySelectorAll('header .logo');
+      if (logos[0]) logos[0].textContent = s.store_name;
+    }
+  } catch (e) { /* abaikan, pakai default HTML */ }
 }
 async function login() {
   const username = document.getElementById('u').value, password = document.getElementById('p').value;
@@ -26,8 +38,10 @@ function tab(t) {
   document.getElementById('vOrders').style.display = t === 'orders' ? 'block' : 'none';
   document.getElementById('vMenu').style.display = t === 'menu' ? 'block' : 'none';
   document.getElementById('vLaporan').style.display = t === 'laporan' ? 'block' : 'none';
+  document.getElementById('vSetting').style.display = t === 'setting' ? 'block' : 'none';
   document.getElementById('fstat').style.display = t === 'orders' ? 'block' : 'none';
   if (t === 'laporan') loadLaporan();
+  if (t === 'setting') loadSettings();
 }
 async function loadStats() {
   try {
@@ -113,4 +127,47 @@ async function saveMenu() {
   try { await apiPost(body); resetForm(); loadMenu(); } catch (e) { alert(e.message); }
 }
 async function delM(id) { if (!confirm('Hapus menu ini?')) return; await apiPost({ action: 'adminDeleteMenu', token: token(), id }); loadMenu(); }
+
+// ---------- Pengaturan ----------
+const PAY_METHODS = ['QRIS', 'GOPAY', 'OVO', 'DANA', 'CASH'];
+async function loadSettings() {
+  const box = document.getElementById('spays');
+  box.innerHTML = '<p class="muted">Memuat...</p>';
+  try {
+    const s = await apiGet('adminSettings', { token: token() });
+    document.getElementById('sname').value = s.store_name || '';
+    document.getElementById('stag').value = s.tagline || '';
+    document.getElementById('sfee').value = s.service_fee || 0;
+    document.getElementById('sest').value = s.estimasi || '';
+    box.innerHTML = '';
+    PAY_METHODS.forEach((m) => {
+      const on = s['pay_' + m + '_enabled'] === '1';
+      const d = document.createElement('div'); d.className = 'payopt' + (on ? ' sel' : '');
+      d.innerHTML = `<input type="checkbox" id="spay_${m}" ${on ? 'checked' : ''} style="width:auto" onchange="this.closest('.payopt').classList.toggle('sel',this.checked)">
+        <div style="flex:1"><input type="text" id="slabel_${m}" value="${(s['pay_' + m + '_label'] || m).replace(/"/g, '&quot;')}" placeholder="Label">
+        <input type="text" id="sdesc_${m}" value="${(s['pay_' + m + '_desc'] || '').replace(/"/g, '&quot;')}" placeholder="Deskripsi" style="margin-top:6px"></div>`;
+      box.appendChild(d);
+    });
+    document.getElementById('smsg').textContent = '';
+  } catch (e) { box.innerHTML = '<div class="warn">' + e.message + '</div>'; }
+}
+async function saveSettings() {
+  const settings = {
+    store_name: document.getElementById('sname').value,
+    tagline: document.getElementById('stag').value,
+    service_fee: document.getElementById('sfee').value,
+    estimasi: document.getElementById('sest').value,
+  };
+  PAY_METHODS.forEach((m) => {
+    settings['pay_' + m + '_enabled'] = document.getElementById('spay_' + m).checked ? '1' : '0';
+    settings['pay_' + m + '_label'] = document.getElementById('slabel_' + m).value;
+    settings['pay_' + m + '_desc'] = document.getElementById('sdesc_' + m).value;
+  });
+  document.getElementById('smsg').textContent = 'Menyimpan...';
+  try {
+    await apiPost({ action: 'adminUpdateSettings', token: token(), settings });
+    document.getElementById('smsg').textContent = 'Tersimpan. Halaman publik ikut diperbarui otomatis.';
+    loadStats(); applyBrand();
+  } catch (e) { document.getElementById('smsg').textContent = e.message; }
+}
 me();

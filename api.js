@@ -46,6 +46,10 @@ let demoSeq = 1;
 function demoGet(action, params) {
   params = params || {};
   if (action === 'payments') return Promise.resolve(DEMO_PAYMENTS);
+  if (action === 'settings') return Promise.resolve({
+    store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • TANPA ANTRI',
+    service_fee: 2000, estimasi: '15–20 menit', payments: DEMO_PAYMENTS,
+  });
   if (action === 'kategori') return Promise.resolve(['Dimsum', 'Mie', 'Minuman']);
   if (action === 'menu') {
     let list = DEMO_MENU.slice();
@@ -78,5 +82,6 @@ function demoPost(body) {
     return Promise.resolve({ order: order, demo: true });
   }
   if (body.action === 'payOrder') return Promise.reject(new Error('Mode demo: isi GAS_API_URL dulu untuk simulasi bayar.'));
+  if (body.action === 'adminUpdateSettings') return Promise.reject(new Error('Mode demo: isi GAS_API_URL dulu untuk menyimpan pengaturan.'));
   return Promise.reject(new Error('Mode demo: isi GAS_API_URL di config.js'));
 }

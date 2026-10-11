@@ -26,6 +26,7 @@
       <button class="btn sm" onclick="tab('orders')">Pesanan</button>
       <button class="btn sm ghost" onclick="tab('menu')">Katalog Menu</button>
       <button class="btn sm ghost" onclick="tab('laporan')">Laporan</button>
+      <button class="btn sm ghost" onclick="tab('setting')">Pengaturan</button>
       <select id="fstat" onchange="loadOrders()" style="margin-left:auto;max-width:220px" aria-label="Filter status">
         <option value="">Semua status</option>
         <option value="menunggu_pembayaran">Menunggu bayar</option>
@@ -67,6 +68,24 @@
       </div>
       <div class="stat-grid" id="lapSum"></div>
       <div id="lapTable" style="margin-top:12px"></div>
+    </div>
+    <div id="vSetting" style="display:none">
+      <div class="sec"><div><h2>Pengaturan Toko</h2><p>Ubah nama, biaya, estimasi, dan metode bayar tanpa edit source code.</p></div></div>
+      <div class="box">
+        <div class="row">
+          <div style="flex:1;min-width:180px"><label>Nama toko</label><input id="sname" type="text"></div>
+          <div style="flex:1;min-width:180px"><label>Tagline</label><input id="stag" type="text"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>Biaya service (Rp)</label><input id="sfee" type="number" min="0"></div>
+          <div style="flex:1"><label>Estimasi siap</label><input id="sest" type="text" placeholder="15–20 menit"></div>
+        </div>
+        <h3 style="margin:16px 0 4px">Metode pembayaran</h3>
+        <p class="muted">Centang untuk mengaktifkan. Minimal 1 harus aktif.</p>
+        <div id="spays"></div>
+        <div class="row" style="margin-top:12px"><button class="btn" onclick="saveSettings()">Simpan Pengaturan</button></div>
+        <p id="smsg" class="muted"></p>
+      </div>
     </div>
   </div>
 </div>

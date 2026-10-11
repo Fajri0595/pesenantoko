@@ -10,7 +10,7 @@
 <body>
 <header class="top">
   <div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo UMKM Mandiri">
-    <div><div class="logo">UMKM MANDIRI</div><small>TAKEAWAY &nbsp;•&nbsp; TANPA ANTRI</small></div>
+    <div><div class="logo" id="brandName">UMKM MANDIRI</div><small id="brandTag">TAKEAWAY &nbsp;•&nbsp; TANPA ANTRI</small></div>
   </div>
   <nav><a href="#menu">Menu</a><a href="#lacak">Lacak</a><a href="./admin.html">Admin</a></nav>
 </header>
@@ -28,7 +28,7 @@
         <button class="btn-light" onclick="document.getElementById('menu').scrollIntoView()">Lihat Menu</button>
         <button class="btn-outline" onclick="document.getElementById('lacak').scrollIntoView()">Lacak Pesanan</button>
       </div>
-      <div class="chips"><span class="chip">Tanpa antri kasir</span><span class="chip">QRIS dan e-wallet</span><span class="chip">Siap sekitar 15 menit</span></div>
+      <div class="chips"><span class="chip">Tanpa antri kasir</span><span class="chip">QRIS dan e-wallet</span><span class="chip" id="estChip">Siap sekitar 15 menit</span></div>
     </div>
   </section>
 
@@ -59,7 +59,7 @@
       <div id="citems" class="cart-items"></div>
       <div class="cart-foot">
         <div class="total-row"><span>Subtotal</span><b id="csub">Rp0</b></div>
-        <div class="total-row muted"><span>Service</span><span>Rp2.000</span></div>
+        <div class="total-row muted"><span>Service</span><span id="svcLabel">Rp2.000</span></div>
         <div class="total-row" style="font-size:18px"><span>Total</span><b id="ctotal">Rp0</b></div>
         <button class="btn" style="width:100%;margin-top:10px;padding:14px" onclick="openCheckout()">Checkout</button>
       </div>
@@ -73,7 +73,7 @@
   </div>
   <div id="hasil"></div>
 
-  <footer class="site">UMKM Mandiri • Frontend GitHub Pages • Backend GAS dan Spreadsheet • QRIS/e-wallet <b>simulasi</b>, Cash di counter
+  <footer class="site"><span id="footBrand">UMKM Mandiri</span> • Frontend GitHub Pages • Backend GAS dan Spreadsheet • QRIS/e-wallet <b>simulasi</b>, Cash di counter
     <div class="pay-row"><span>QRIS</span><span>GoPay</span><span>OVO</span><span>DANA</span><span>Cash</span></div>
   </footer>
 </div>
