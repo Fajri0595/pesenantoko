@@ -155,6 +155,9 @@ async function loadSettings() {
     document.getElementById('sbuka').value = s.jam_buka || '';
     document.getElementById('stup').value = s.jam_tutup || '';
     document.getElementById('sbatas').value = s.batas_bayar_menit || 15;
+    document.getElementById('swa_on').value = s.wa_enabled === '1' ? 1 : 0;
+    document.getElementById('swa_admin').value = s.wa_admin || '';
+    document.getElementById('swa_token').value = s.wa_token || '';
     box.innerHTML = '';
     PAY_METHODS.forEach((m) => {
       const on = s['pay_' + m + '_enabled'] === '1';
@@ -176,6 +179,9 @@ async function saveSettings() {
     jam_buka: document.getElementById('sbuka').value,
     jam_tutup: document.getElementById('stup').value,
     batas_bayar_menit: document.getElementById('sbatas').value,
+    wa_enabled: document.getElementById('swa_on').value,
+    wa_admin: document.getElementById('swa_admin').value,
+    wa_token: document.getElementById('swa_token').value,
   };
   PAY_METHODS.forEach((m) => {
     settings['pay_' + m + '_enabled'] = document.getElementById('spay_' + m).checked ? '1' : '0';

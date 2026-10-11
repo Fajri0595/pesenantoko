@@ -8,7 +8,7 @@
 </head>
 <body>
 <header class="top"><div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo UMKM Mandiri"><div><div class="logo">UMKM MANDIRI</div><small>ADMIN</small></div></div>
-<nav><a href="./index.html">Publik</a><button id="btnOut" style="display:none" onclick="logout()">Logout</button></nav></header>
+<nav><a href="./index.html">Publik</a><a href="./dapur.html">Dapur</a><button id="btnOut" style="display:none" onclick="logout()">Logout</button></nav></header>
 <div class="wrap">
   <div id="cfgWarn" class="warn" style="display:none">Isi <code>GAS_API_URL</code> di <code>config.js</code> agar admin terhubung ke GAS.</div>
   <div id="login" class="box login-card">
@@ -91,6 +91,13 @@
         <h3 style="margin:16px 0 4px">Metode pembayaran</h3>
         <p class="muted">Centang untuk mengaktifkan. Minimal 1 harus aktif.</p>
         <div id="spays"></div>
+        <h3 style="margin:16px 0 4px">Notifikasi WhatsApp</h3>
+        <p class="muted">Via Fonnte. Pesanan baru dan pelunasan terkirim otomatis ke nomor admin.</p>
+        <div class="row">
+          <div style="flex:1"><label>Status</label><select id="swa_on"><option value="0">Mati</option><option value="1">Aktif</option></select></div>
+          <div style="flex:2;min-width:180px"><label>Nomor admin (08xx)</label><input id="swa_admin" type="tel" placeholder="0812xxxxxxx"></div>
+        </div>
+        <label>Token Fonnte</label><input id="swa_token" type="text" placeholder="Token dari fonnte.com" autocomplete="off">
         <div class="row" style="margin-top:12px"><button class="btn" onclick="saveSettings()">Simpan Pengaturan</button></div>
         <p id="smsg" class="muted"></p>
       </div>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dapur — UMKM Mandiri</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./style.css">
+<style>
+  .dapur-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:800px){.dapur-grid{grid-template-columns:1fr}}
+  .dapur-col h2{margin:6px 0 10px;font-size:20px}
+  .antri-card{background:#fffdf9;border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0;box-shadow:var(--shadow)}
+  .antri-card.siap{border-color:var(--brand);box-shadow:0 0 0 3px rgba(62,107,79,.18)}
+  .antri-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .antri-no{font-size:30px;font-weight:800;color:var(--brand-d)}
+  .antri-meta{font-size:13px;color:#6f675c;margin:6px 0;line-height:1.6}
+  #dClock{font-variant-numeric:tabular-nums;font-weight:800}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo"><div><div class="logo" id="dapurBrand">UMKM MANDIRI</div><small>DAPUR DAN ANTRIAN</small></div></div>
+<nav><span id="dClock">--:--</span><a href="./admin.html">Admin</a><button id="btnSound" onclick="aktifkanSuara()">Aktifkan Suara</button><button id="btnOut" style="display:none" onclick="keluar()">Keluar</button></nav></header>
+<div class="wrap">
+  <div id="dLogin" class="box login-card">
+    <h2>Hubungkan Layar Dapur</h2><p class="muted">Login sekali dengan akun admin. Token tersimpan di perangkat ini.</p>
+    <label>Username</label><input id="du" type="text" value="admin" autocomplete="username">
+    <label>Password</label><input id="dp" type="password" autocomplete="current-password">
+    <button class="btn" style="margin-top:14px;width:100%;padding:13px" onclick="pair()">Hubungkan</button>
+    <p id="dmsg" style="color:#8f6b1d;font-size:13px"></p>
+  </div>
+  <div id="dMain" style="display:none">
+    <div class="sec"><div><h2>Antrian Aktif</h2><p id="dCount" class="muted">Memuat...</p></div></div>
+    <div class="dapur-grid">
+      <div class="dapur-col"><h2>Dimasak</h2><div id="dMasak"></div></div>
+      <div class="dapur-col"><h2>Siap Diambil</h2><div id="dSiap"></div></div>
+    </div>
+  </div>
+</div>
+<script src="./config.js"></script>
+<script src="./api.js"></script>
+<script src="./foodimg.js"></script>
+<script src="./dapur.js"></script>
+</body>
+</html>
