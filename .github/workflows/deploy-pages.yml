@@ -2,7 +2,7 @@ name: Deploy Frontend ke GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['index.html', 'admin.html', 'app.js', 'admin.js', 'api.js', 'config.js', 'foodimg.js', 'style.css', '.nojekyll', '.github/workflows/deploy-pages.yml']
+    paths: ['index.html', 'admin.html', 'app.js', 'admin.js', 'api.js', 'config.js', 'foodimg.js', 'favicon.svg', 'style.css', '.nojekyll', '.github/workflows/deploy-pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
