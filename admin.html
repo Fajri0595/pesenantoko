@@ -34,6 +34,7 @@
         <option value="siap_diambil">Siap diambil</option>
         <option value="selesai">Selesai</option>
         <option value="dibatalkan">Dibatalkan</option>
+        <option value="kedaluwarsa">Kedaluwarsa</option>
       </select>
     </div>
     <div id="vOrders"></div>
@@ -47,6 +48,7 @@
         </div>
         <div class="row">
           <div style="flex:1"><label>Harga (Rp)</label><input id="mprice" type="number" value="11000" min="0"></div>
+          <div style="flex:1"><label>Stok (-1 = tanpa batas)</label><input id="mstok" type="number" value="-1"></div>
           <div style="flex:1"><label>Tersedia?</label><select id="mavail"><option value="1">Ya</option><option value="0">Tidak</option></select></div>
         </div>
         <label>Foto (URL langsung, opsional)</label><input id="memoji" type="url" placeholder="https://... — kosongkan untuk foto otomatis">
@@ -80,6 +82,11 @@
         <div class="row">
           <div style="flex:1"><label>Biaya service (Rp)</label><input id="sfee" type="number" min="0"></div>
           <div style="flex:1"><label>Estimasi siap</label><input id="sest" type="text" placeholder="15–20 menit"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>Jam buka (JJ:MM)</label><input id="sbuka" type="text" placeholder="08:00"></div>
+          <div style="flex:1"><label>Jam tutup (JJ:MM)</label><input id="stup" type="text" placeholder="21:00"></div>
+          <div style="flex:1"><label>Batas bayar (menit)</label><input id="sbatas" type="number" min="1" max="1440"></div>
         </div>
         <h3 style="margin:16px 0 4px">Metode pembayaran</h3>
         <p class="muted">Centang untuk mengaktifkan. Minimal 1 harus aktif.</p>

@@ -2,7 +2,8 @@
 let MENU = [], CART = [];
 try { CART = JSON.parse(localStorage.getItem('cart') || '[]'); } catch (e) { CART = []; }
 let PAYMENTS = {}, paySel = 'QRIS', lastOrder = null, lastLacak = null, showBayarRef = null;
-let SETTINGS = { store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • TANPA ANTRI', service_fee: 2000, estimasi: '15–20 menit' };
+let SETTINGS = { store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • TANPA ANTRI', service_fee: 2000, estimasi: '15–20 menit', batas_bayar_menit: 15, jam_buka: '', jam_tutup: '', buka: true };
+const stokOf = (m) => (m.stok === '' || m.stok === undefined || m.stok === null) ? -1 : (isNaN(parseInt(m.stok, 10)) ? -1 : parseInt(m.stok, 10));
 const fee = () => SETTINGS.service_fee || 0;
 const storeSlug = () => SETTINGS.store_name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'TOKO';
 const rp = (n) => 'Rp' + (n || 0).toLocaleString('id-ID');
@@ -45,6 +46,17 @@ function applySettings(s) {
   if (s.tagline) SETTINGS.tagline = String(s.tagline);
   if (s.service_fee !== undefined) SETTINGS.service_fee = Math.max(0, parseInt(s.service_fee) || 0);
   if (s.estimasi) SETTINGS.estimasi = String(s.estimasi);
+  if (s.batas_bayar_menit !== undefined) SETTINGS.batas_bayar_menit = Math.max(1, parseInt(s.batas_bayar_menit) || 15);
+  if (s.jam_buka) SETTINGS.jam_buka = String(s.jam_buka);
+  if (s.jam_tutup) SETTINGS.jam_tutup = String(s.jam_tutup);
+  if (s.buka !== undefined) SETTINGS.buka = !!s.buka;
+  const tw = $('tutupWarn');
+  if (tw) {
+    if (SETTINGS.buka === false) {
+      tw.style.display = 'block';
+      tw.innerHTML = '<b>Toko tutup.</b> Jam buka ' + SETTINGS.jam_buka + '–' + SETTINGS.jam_tutup + '. Pesanan dibuka kembali saat jam operasional.';
+    } else tw.style.display = 'none';
+  }
   if (s.payments && Object.keys(s.payments).length) {
     PAYMENTS = s.payments;
     if (!PAYMENTS[paySel]) paySel = Object.keys(PAYMENTS)[0];
@@ -85,7 +97,7 @@ function render() {
     d.innerHTML = `<div class="thumb"><img src="${img}" alt="${m.name}" loading="lazy" onerror="this.remove()"></div><div class="body">
       <div class="cat">${m.category}</div><h3>${m.name}</h3>
       <div class="desc">${m.description || ''}</div>
-      <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge">Tersedia</span></div>
+      <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge">${stokOf(m) === -1 ? 'Tersedia' : 'Sisa ' + stokOf(m)}</span></div>
       <input id="lv-${m.id}" class="level" type="text" placeholder="Level / catatan — cth. Lv 4" maxlength="20">
       <div class="act">
         <div class="qty"><button onclick="addCart(${m.id},-1)" aria-label="kurang">−</button><button onclick="addCart(${m.id},1)" aria-label="tambah">+</button></div>
@@ -99,6 +111,9 @@ function addCart(id, delta) {
   const m = MENU.find((x) => x.id === id); if (!m) return;
   const lv = (document.getElementById('lv-' + id)?.value || '').slice(0, 20);
   if (delta > 0) {
+    const sisa = stokOf(m);
+    const diKeranjang = CART.filter((c) => c.menu_id === id).reduce((a, c) => a + c.qty, 0);
+    if (sisa !== -1 && diKeranjang + 1 > sisa) { toast('Stok ' + m.name + ' tersisa ' + sisa); return; }
     const same = CART.find((c) => c.menu_id === id && (c.level || '') === lv);
     if (same) same.qty = Math.min(20, same.qty + 1);
     else CART.push({ menu_id: id, name: m.name, price: m.price, qty: 1, level: lv });
@@ -157,6 +172,7 @@ function renderPays() {
 }
 function openCheckout() {
   if (!CART.length) { toast('Keranjang masih kosong'); return; }
+  if (SETTINGS.buka === false) { toast('Toko tutup (' + SETTINGS.jam_buka + '–' + SETTINGS.jam_tutup + ')'); return; }
   const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
   $('coSum').innerHTML = `${CART.length} jenis item • Subtotal ${rp(sub)} + service ${rp(fee())} = <b>${rp(sub + fee())}</b>`;
   openM('mCheckout');
@@ -220,14 +236,15 @@ function showBayar(o) {
   const ref = payRef(o.code, o.payment_method);
   const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(storeSlug() + '|' + o.code + '|' + o.total);
   const steps = (PAY_STEPS[o.payment_method] || PAY_STEPS.QRIS).map((s, i) => `<div class="struk-row"><span>Langkah ${i + 1}</span><span>${s.split('UMKM MANDIRI').join(SETTINGS.store_name)}</span></div>`).join('');
-  const batas = Date.now() + 15 * 60 * 1000;
+  const mnit = SETTINGS.batas_bayar_menit || 15;
+  const batas = Date.now() + mnit * 60 * 1000;
   $('bBody').innerHTML = `
     <div class="struk-row"><span>Merchant</span><b>${SETTINGS.store_name}</b></div>
     <div class="struk-row"><span>Kode pesanan</span><b>${o.code}</b></div>
     <div class="struk-row"><span>Antrian</span><b>${o.queue_no}</b></div>
     <div class="struk-row"><span>${o.payment_method === 'QRIS' ? 'NMID' : 'Nomor tujuan'}</span><b>${ref}</b></div>
     <div class="struk-row"><span>Nominal</span><b>${rp(o.total)}</b></div>
-    <div class="struk-row"><span>Batas bayar</span><b id="payCount">15:00</b></div>
+    <div class="struk-row"><span>Batas bayar</span><b id="payCount">${String(mnit).padStart(2, '0')}:00</b></div>
     <div class="qrbox" style="margin-top:10px">
       <img class="qr-img" src="${qrUrl}" alt="Kode QR pembayaran" onerror="this.style.display='none';document.getElementById('qrFb').style.display='block'">
       <pre id="qrFb" style="display:none;text-align:left;font-size:10px">${qrFake(o.code)}</pre>
@@ -293,7 +310,7 @@ function printStruk() {
   setTimeout(() => document.body.classList.remove('p-struk'), 500);
 }
 function lacakDariStruk() { closeM('mStruk'); $('kode').value = lastOrder.code; lacak(); $('lacak').scrollIntoView({ behavior: 'smooth' }); }
-const STATUS = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan' };
+const STATUS = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan', kedaluwarsa: 'Kedaluwarsa' };
 async function lacak() {
   const code = $('kode').value.trim().toUpperCase();
   const box = $('hasil');
@@ -303,7 +320,7 @@ async function lacak() {
     const j = await apiGet('order', { code });
     const o = j.order;
     const flow = ['menunggu_pembayaran', 'dimasak', 'siap_diambil', 'selesai'];
-    const pills = o.status === 'dibatalkan' ? '<span class="pill cur">Dibatalkan</span>' : flow.map((s) => {
+    const pills = (o.status === 'dibatalkan' || o.status === 'kedaluwarsa') ? `<span class="pill cur">${STATUS[o.status] || o.status}</span>` : flow.map((s) => {
       const idx = flow.indexOf(o.status), i = flow.indexOf(s);
       return `<span class="pill ${i < idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${STATUS[s]}</span>`;
     }).join(' → ');

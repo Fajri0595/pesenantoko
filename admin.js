@@ -1,7 +1,7 @@
 // Admin (GitHub Pages) -> GAS — v3: thumbnail foto, tanpa ikon.
 const rp = (n) => 'Rp' + (n || 0).toLocaleString('id-ID');
 const token = () => localStorage.getItem('admin_token') || '';
-const ST_LABEL = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan' };
+const ST_LABEL = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan', kedaluwarsa: 'Kedaluwarsa' };
 
 async function me() {
   if (!isConfigured()) document.getElementById('cfgWarn').style.display = 'block';
@@ -110,9 +110,9 @@ async function setPay(id, payment_status) { await apiPost({ action: 'adminUpdate
 async function loadMenu() {
   try {
     const rows = await apiGet('adminMenu', { token: token() });
-    document.getElementById('mlist').innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Foto</th><th>Menu</th><th>Harga</th><th>Kategori</th><th>Status</th><th></th></tr>' +
+    document.getElementById('mlist').innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Foto</th><th>Menu</th><th>Harga</th><th>Stok</th><th>Kategori</th><th>Status</th><th></th></tr>' +
       rows.map((m) => `<tr><td><img class="menu-thumb" src="${foodImg(m)}" alt="${m.name}" loading="lazy" onerror="this.remove()"></td>
-      <td><b>${m.name}</b></td><td>${rp(m.price)}</td><td>${m.category}</td>
+      <td><b>${m.name}</b></td><td>${rp(m.price)}</td><td>${(m.stok === '' || m.stok === undefined || m.stok === null || Number(m.stok) === -1) ? '∞' : m.stok}</td><td>${m.category}</td>
       <td><span class="badge ${m.is_available ? 'paid' : 'pending'}">${m.is_available ? 'Aktif' : 'Nonaktif'}</span></td>
       <td style="white-space:nowrap"><button class="btn sm ghost" onclick='editM(${JSON.stringify(m).replace(/'/g, '&#39;')})'>Edit</button> <button class="btn sm ghost" onclick="delM(${m.id})">Hapus</button></td></tr>`).join('') + '</table></div>';
   } catch (e) { document.getElementById('mlist').innerHTML = '<div class="warn">' + e.message + '</div>'; }
@@ -122,9 +122,11 @@ function editM(m) {
   document.getElementById('mcat').value = m.category; document.getElementById('mprice').value = m.price;
   document.getElementById('memoji').value = (m.emoji && m.emoji.indexOf('http') === 0) ? m.emoji : '';
   document.getElementById('mdesc').value = m.description || '';
+  const st = (m.stok === '' || m.stok === undefined || m.stok === null) ? -1 : m.stok;
+  document.getElementById('mstok').value = st;
   document.getElementById('mavail').value = m.is_available ? 1 : 0; window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-function resetForm() { document.getElementById('mid').value = ''; document.getElementById('mname').value = ''; document.getElementById('mprice').value = 11000; document.getElementById('memoji').value = ''; }
+function resetForm() { document.getElementById('mid').value = ''; document.getElementById('mname').value = ''; document.getElementById('mprice').value = 11000; document.getElementById('memoji').value = ''; document.getElementById('mstok').value = -1; }
 async function saveMenu() {
   const id = document.getElementById('mid').value;
   const foto = document.getElementById('memoji').value.trim();
@@ -132,6 +134,7 @@ async function saveMenu() {
     action: id ? 'adminUpdateMenu' : 'adminCreateMenu', token: token(), id: id || undefined,
     name: document.getElementById('mname').value, category: document.getElementById('mcat').value || 'Mie',
     price: parseInt(document.getElementById('mprice').value) || 0, emoji: foto,
+    stok: document.getElementById('mstok').value,
     description: document.getElementById('mdesc').value, is_available: document.getElementById('mavail').value === '1' ? 1 : 0,
   };
   try { await apiPost(body); resetForm(); loadMenu(); } catch (e) { alert(e.message); }
@@ -149,6 +152,9 @@ async function loadSettings() {
     document.getElementById('stag').value = s.tagline || '';
     document.getElementById('sfee').value = s.service_fee || 0;
     document.getElementById('sest').value = s.estimasi || '';
+    document.getElementById('sbuka').value = s.jam_buka || '';
+    document.getElementById('stup').value = s.jam_tutup || '';
+    document.getElementById('sbatas').value = s.batas_bayar_menit || 15;
     box.innerHTML = '';
     PAY_METHODS.forEach((m) => {
       const on = s['pay_' + m + '_enabled'] === '1';
@@ -167,6 +173,9 @@ async function saveSettings() {
     tagline: document.getElementById('stag').value,
     service_fee: document.getElementById('sfee').value,
     estimasi: document.getElementById('sest').value,
+    jam_buka: document.getElementById('sbuka').value,
+    jam_tutup: document.getElementById('stup').value,
+    batas_bayar_menit: document.getElementById('sbatas').value,
   };
   PAY_METHODS.forEach((m) => {
     settings['pay_' + m + '_enabled'] = document.getElementById('spay_' + m).checked ? '1' : '0';
