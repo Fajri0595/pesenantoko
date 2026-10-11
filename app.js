@@ -1,41 +1,75 @@
-// Frontend publik (GitHub Pages) -> Backend GAS
+// Frontend publik (GitHub Pages) -> Backend GAS — UI v2
 let MENU = [], CART = [];
 try { CART = JSON.parse(localStorage.getItem('cart') || '[]'); } catch (e) { CART = []; }
 let PAYMENTS = {}, paySel = 'QRIS', lastOrder = null, lastLacak = null, showBayarRef = null;
 const rp = (n) => 'Rp' + (n || 0).toLocaleString('id-ID');
+const $ = (id) => document.getElementById(id);
+const PAY_ICON = { QRIS: '⊞', GOPAY: '💚', OVO: '💜', DANA: '💙', CASH: '💵' };
+
+function toast(msg) {
+  const box = $('toast'); if (!box) return;
+  const d = document.createElement('div'); d.className = 'toast-msg'; d.textContent = msg;
+  box.appendChild(d); setTimeout(() => d.remove(), 2200);
+}
 
 async function init() {
-  if (!isConfigured()) document.getElementById('cfgWarn').style.display = 'block';
+  if (!isConfigured()) $('cfgWarn').style.display = 'block';
   try {
-    const [m, p, k] = await Promise.all([
-      apiGet('menu'), apiGet('payments'), apiGet('kategori'),
-    ]);
+    const [m, p, k] = await Promise.all([apiGet('menu'), apiGet('payments'), apiGet('kategori')]);
     MENU = m; PAYMENTS = p;
-    const sel = document.getElementById('kategori');
+    const sel = $('kategori');
     k.forEach((c) => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
-    sel.onchange = render; document.getElementById('q').oninput = render;
-    renderPays(); render(); renderCart();
+    sel.onchange = () => { render(); syncPills(); };
+    $('q').oninput = render;
+    buildPills(k); renderPays(); render(); renderCart();
   } catch (e) {
-    document.getElementById('grid').innerHTML = '<p style="color:red">Gagal memuat menu: ' + e.message + '</p>';
+    $('grid').innerHTML = '<p style="color:red">Gagal memuat menu: ' + e.message + '</p>';
   }
 }
+function picClass(cat) {
+  cat = (cat || '').toLowerCase();
+  if (cat.includes('dimsum')) return 'pic-dimsum';
+  if (cat.includes('minum')) return 'pic-minuman';
+  if (cat.includes('topping')) return 'pic-topping';
+  return 'pic-mie';
+}
+function buildPills(kats) {
+  const box = $('pills'); if (!box) return;
+  const mk = (val, label) => {
+    const b = document.createElement('button');
+    b.className = 'pill-btn' + (!val ? ' on' : ''); b.textContent = label; b.dataset.val = val;
+    b.onclick = () => setKat(val);
+    return b;
+  };
+  box.innerHTML = '';
+  box.appendChild(mk('', 'Semua'));
+  kats.forEach((c) => box.appendChild(mk(c, c)));
+}
+function setKat(v) { $('kategori').value = v; render(); syncPills(); }
+function syncPills() {
+  const v = $('kategori').value;
+  document.querySelectorAll('#pills .pill-btn').forEach((b) => b.classList.toggle('on', b.dataset.val === v));
+}
 function render() {
-  const q = document.getElementById('q').value.toLowerCase();
-  const kat = document.getElementById('kategori').value;
-  const g = document.getElementById('grid'); g.innerHTML = '';
-  MENU.filter((m) => (!kat || m.category === kat) && m.name.toLowerCase().includes(q)).forEach((m) => {
+  const q = $('q').value.toLowerCase();
+  const kat = $('kategori').value;
+  const list = MENU.filter((m) => (!kat || m.category === kat) && m.name.toLowerCase().includes(q));
+  $('menuCount').textContent = list.length + ' menu' + (kat ? ' • ' + kat : '') + ' • harga sudah termasuk pajak resto';
+  const g = $('grid'); g.innerHTML = '';
+  list.forEach((m) => {
     const d = document.createElement('div'); d.className = 'card';
-    d.innerHTML = `<div class="pic">${m.emoji || '🍜'}</div><div class="body">
+    d.innerHTML = `<div class="pic ${picClass(m.category)}">${m.emoji || '🍜'}</div><div class="body">
       <div class="cat">${m.category}</div><h3>${m.name}</h3>
       <div class="desc">${m.description || ''}</div>
-      <div class="price">${rp(m.price)}</div>
-      <div class="row">
-        <input id="lv-${m.id}" type="text" placeholder="Lv / note" style="flex:1" title="Contoh: Lv 4, es sedikit">
-        <div class="qty"><button onclick="addCart(${m.id},-1)">−</button><button onclick="addCart(${m.id},1)">＋ Tambah</button></div>
+      <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge">ready</span></div>
+      <input id="lv-${m.id}" class="level" type="text" placeholder="Level / note — cth. Lv 4, es sedikit" maxlength="20">
+      <div class="act">
+        <div class="qty"><button onclick="addCart(${m.id},-1)" aria-label="kurang">−</button><button onclick="addCart(${m.id},1)" aria-label="tambah">+</button></div>
+        <button class="add" onclick="addCart(${m.id},1)">＋ Tambah</button>
       </div></div>`;
     g.appendChild(d);
   });
-  if (!g.children.length) g.innerHTML = '<p>Menu tidak ditemukan.</p>';
+  if (!g.children.length) g.innerHTML = '<div class="empty">😕 Menu tidak ditemukan. Coba kata kunci lain.</div>';
 }
 function addCart(id, delta) {
   const m = MENU.find((x) => x.id === id); if (!m) return;
@@ -44,59 +78,69 @@ function addCart(id, delta) {
     const same = CART.find((c) => c.menu_id === id && (c.level || '') === lv);
     if (same) same.qty = Math.min(20, same.qty + 1);
     else CART.push({ menu_id: id, name: m.name, price: m.price, qty: 1, level: lv });
+    toast('✓ ' + m.name + ' masuk keranjang');
   } else {
     const i = CART.findIndex((c) => c.menu_id === id);
     if (i > -1) { CART[i].qty--; if (CART[i].qty <= 0) CART.splice(i, 1); }
   }
-  saveCart();
+  saveCart(true);
 }
-function saveCart() { localStorage.setItem('cart', JSON.stringify(CART)); renderCart(); }
+function saveCart(pop) {
+  localStorage.setItem('cart', JSON.stringify(CART)); renderCart();
+  if (pop) { const f = $('fab'); f.classList.remove('pop'); void f.offsetWidth; f.classList.add('pop'); }
+}
 function renderCart() {
-  document.getElementById('cnt').textContent = CART.reduce((a, c) => a + c.qty, 0);
-  const box = document.getElementById('citems'); box.innerHTML = '';
-  let total = 0;
+  const count = CART.reduce((a, c) => a + c.qty, 0);
+  $('cnt').textContent = count;
+  const box = $('citems'); box.innerHTML = '';
+  let sub = 0;
   CART.forEach((c, i) => {
-    total += c.price * c.qty;
-    const d = document.createElement('div');
-    d.innerHTML = `<div class="row" style="justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0">
-      <div><b>${c.name}</b><br><small>${c.level || ''} • ${rp(c.price)} × ${c.qty} = <b>${rp(c.price * c.qty)}</b></small></div>
-      <div class="qty"><button onclick="chQty(${i},-1)">−</button><span>${c.qty}</span><button onclick="chQty(${i},1)">＋</button>
-      <button onclick="rmItem(${i})">🗑</button></div></div>`;
+    sub += c.price * c.qty;
+    const d = document.createElement('div'); d.className = 'cart-line';
+    d.innerHTML = `<div><b>${c.name}</b><br><small class="muted">${c.level ? c.level + ' • ' : ''}${rp(c.price)} × ${c.qty} = <b>${rp(c.price * c.qty)}</b></small></div>
+      <div class="qty"><button onclick="chQty(${i},-1)">−</button><span><b>${c.qty}</b></span><button onclick="chQty(${i},1)">+</button>
+      <button onclick="rmItem(${i})" title="hapus">🗑</button></div>`;
     box.appendChild(d);
   });
-  if (!CART.length) box.innerHTML = '<p>Keranjang kosong. Pilih menu dulu.</p>';
-  document.getElementById('ctotal').textContent = rp(total + (CART.length ? 2000 : 0));
+  if (!CART.length) box.innerHTML = '<div class="empty">🛒 Keranjang kosong.<br>Pilih mie + dimsum favoritmu dulu.</div>';
+  const total = sub + (CART.length ? 2000 : 0);
+  $('csub').textContent = rp(sub);
+  $('ctotal').textContent = rp(total);
+  $('fabTotal').textContent = rp(total);
 }
 function chQty(i, d) { CART[i].qty += d; if (CART[i].qty <= 0) CART.splice(i, 1); saveCart(); }
 function rmItem(i) { CART.splice(i, 1); saveCart(); }
-function toggleCart(open) { document.getElementById('drawer').classList.toggle('open', open); }
+function toggleCart(open) { $('drawer').classList.toggle('open', open); }
 
 function renderPays() {
-  const box = document.getElementById('pays'); box.innerHTML = '';
+  const box = $('pays'); box.innerHTML = '';
   Object.entries(PAYMENTS).forEach(([k, v]) => {
     const d = document.createElement('div');
     d.className = 'payopt' + (k === paySel ? ' sel' : '');
-    d.innerHTML = `<input type="radio" ${k === paySel ? 'checked' : ''}><div><b>${v.label}</b><br><small>${v.desc}</small></div>`;
+    d.innerHTML = `<div class="pay-ico">${PAY_ICON[k] || '💳'}</div><div><b>${v.label}</b><br><small class="muted">${v.desc}</small></div>
+      <input type="radio" ${k === paySel ? 'checked' : ''} style="margin-left:auto;width:auto">`;
     d.onclick = () => { paySel = k; renderPays(); };
     box.appendChild(d);
   });
 }
 function openCheckout() {
-  if (!CART.length) return alert('Keranjang kosong');
+  if (!CART.length) { toast('Keranjang masih kosong'); return; }
   toggleCart(false);
   const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
-  document.getElementById('coSum').innerHTML = `${CART.length} jenis item • Subtotal ${rp(sub)} + service Rp2.000 = <b>${rp(sub + 2000)}</b>`;
+  $('coSum').innerHTML = `🧾 ${CART.length} jenis item • Subtotal ${rp(sub)} + service Rp2.000 = <b>${rp(sub + 2000)}</b>`;
   openM('mCheckout');
 }
-function openM(id) { document.getElementById(id).classList.add('open'); }
-function closeM(id) { document.getElementById(id).classList.remove('open'); }
+function openM(id) { $(id).classList.add('open'); }
+function closeM(id) { $(id).classList.remove('open'); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach((m) => m.classList.remove('open')); });
 
 async function buatPesanan() {
-  const customer_name = document.getElementById('nama').value.trim();
-  const customer_phone = document.getElementById('hp').value.trim();
-  const note = document.getElementById('catatan').value.trim();
-  if (!customer_name || !customer_phone) return alert('Nama dan HP wajib');
-  if (!CART.length) return alert('Keranjang kosong');
+  const customer_name = $('nama').value.trim();
+  const customer_phone = $('hp').value.trim();
+  const note = $('catatan').value.trim();
+  if (!customer_name || !customer_phone) { toast('Isi nama & HP dulu'); return; }
+  if (!CART.length) return;
+  const btn = $('btnOrder'); btn.disabled = true; btn.textContent = 'Memproses... ⏳';
   try {
     const j = await apiPost({
       action: 'createOrder', customer_name, customer_phone, note,
@@ -104,10 +148,11 @@ async function buatPesanan() {
     });
     lastOrder = j.order;
     CART = []; saveCart(); closeM('mCheckout');
-    if (j.demo) alert('Mode DEMO: pesanan tidak tersimpan. Isi GAS_API_URL di config.js lalu deploy ulang.');
+    if (j.demo) toast('Mode DEMO — hubungkan GAS untuk simpan asli');
     if (lastOrder.payment_method === 'CASH') showStruk(lastOrder);
     else showBayar(lastOrder);
-  } catch (e) { alert(e.message); }
+  } catch (e) { toast(e.message); }
+  btn.disabled = false; btn.textContent = 'Buat Pesanan →';
 }
 function qrFake(code) {
   let s = ''; const ch = '█▓▒░<>+*#$%&';
@@ -115,41 +160,43 @@ function qrFake(code) {
   return `SIMULASI-${code}\n` + s;
 }
 function showBayar(o) {
-  document.getElementById('bTitle').textContent = `Bayar ${PAYMENTS[o.payment_method].label} — ${rp(o.total)}`;
-  document.getElementById('bBody').innerHTML = `
+  $('bTitle').textContent = `Bayar ${PAYMENTS[o.payment_method].label} — ${rp(o.total)}`;
+  $('bBody').innerHTML = `
     <p>Kode <b>${o.code}</b> • Antrian <b>${o.queue_no}</b></p>
     <div class="qrbox"><pre style="text-align:left;font-size:10px">${qrFake(o.code)}</pre>
-    <div>${o.payment_method} • ${rp(o.total)}</div><small>QR simulasi — tidak ada uang asli</small></div>
-    <p><small>${PAYMENTS[o.payment_method].desc}. Klik tombol di bawah seolah kamu sudah bayar di aplikasi aslinya.</small></p>
-    <div class="row"><button class="btn ghost" onclick="closeM('mBayar')">Nanti</button>
-    <button id="btnPay" class="btn green" onclick="simPay('${o.code}')">Saya Sudah Bayar</button></div>`;
+    <div style="font-size:18px;font-weight:800">${o.payment_method} • ${rp(o.total)}</div><small class="muted">QR simulasi — tidak ada uang asli</small></div>
+    <p><small class="muted">${PAYMENTS[o.payment_method].desc}. Klik tombol di bawah seolah kamu sudah bayar di aplikasi aslinya.</small></p>
+    <div class="row"><button class="btn ghost" onclick="closeM('mBayar')">Bayar Nanti</button>
+    <button id="btnPay" class="btn green" onclick="simPay('${o.code}')">Saya Sudah Bayar ✓</button></div>`;
   openM('mBayar');
 }
 async function simPay(code) {
-  const b = document.getElementById('btnPay');
+  const b = $('btnPay');
   b.disabled = true; b.textContent = 'Memverifikasi... ⏳';
-  await new Promise((r) => setTimeout(r, 2000));
+  await new Promise((r) => setTimeout(r, 1800));
   try {
     const j = await apiPost({ action: 'payOrder', code });
-    closeM('mBayar'); showStruk(j.order);
-  } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Bayar'; alert(e.message); }
+    closeM('mBayar'); showStruk(j.order); toast('Pembayaran lunas ✓');
+  } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Bayar ✓'; toast(e.message); }
 }
 function showStruk(o) {
-  document.getElementById('sBody').innerHTML = `
-    <p>Kode: <b style="font-size:20px">${o.code}</b> • Antrian: <b>${o.queue_no}</b></p>
-    <p>${o.payment_method === 'CASH' ? 'Bayar <b>Cash Rp' + o.total.toLocaleString('id-ID') + '</b> saat ambil di counter.' : 'Sudah <b>LUNAS</b> (' + o.payment_method + ').'}</p>
-    <p>Estimasi siap: <b>15–20 menit</b>. Tunjukkan kode ini saat ambil.</p>
-    <table>${o.items.map((i) => `<tr><td>${i.qty}× ${i.menu_name} <small>${i.level || ''}</small></td><td>${rp(i.price * i.qty)}</td></tr>`).join('')}
-    <tr><td>Service</td><td>${rp(o.service_fee)}</td></tr><tr><td><b>Total</b></td><td><b>${rp(o.total)}</b></td></tr></table>`;
+  $('sBody').innerHTML = `
+    <div class="qrbox" style="margin-bottom:12px"><div class="muted">KODE PENGAMBILAN</div>
+    <div style="font-size:30px;font-weight:800;letter-spacing:2px">${o.code}</div>
+    <div>Antrian <b>${o.queue_no}</b> • Estimasi <b>15–20 mnt</b></div></div>
+    <p>${o.payment_method === 'CASH' ? '💵 Bayar <b>Cash ' + rp(o.total) + '</b> saat ambil di counter.' : '✅ Sudah <b>LUNAS</b> (' + o.payment_method + ').'}</p>
+    <table>${o.items.map((i) => `<tr><td>${i.qty}× ${i.menu_name} <small class="muted">${i.level || ''}</small></td><td style="text-align:right">${rp(i.price * i.qty)}</td></tr>`).join('')}
+    <tr><td>Service</td><td style="text-align:right">${rp(o.service_fee)}</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>${rp(o.total)}</b></td></tr></table>
+    <p><small class="muted">Tunjukkan kode ini ke counter saat mengambil. Screenshot struk ini.</small></p>`;
   openM('mStruk');
 }
-function lacakDariStruk() { closeM('mStruk'); document.getElementById('kode').value = lastOrder.code; lacak(); document.getElementById('lacak').scrollIntoView(); }
+function lacakDariStruk() { closeM('mStruk'); $('kode').value = lastOrder.code; lacak(); $('lacak').scrollIntoView({ behavior: 'smooth' }); }
 const STATUS = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan' };
 async function lacak() {
-  const code = document.getElementById('kode').value.trim().toUpperCase();
-  const box = document.getElementById('hasil');
-  if (!code) return;
-  box.innerHTML = 'Mencari...';
+  const code = $('kode').value.trim().toUpperCase();
+  const box = $('hasil');
+  if (!code) { toast('Isi kode dulu, cth GC-XXXXXX'); return; }
+  box.innerHTML = '<p class="muted">Mencari pesanan...</p>';
   try {
     const j = await apiGet('order', { code });
     const o = j.order;
@@ -158,15 +205,18 @@ async function lacak() {
       const idx = flow.indexOf(o.status), i = flow.indexOf(s);
       return `<span class="pill ${i < idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${STATUS[s]}</span>`;
     }).join(' → ');
-    box.innerHTML = `<div class="box" style="margin-top:10px">
-      <b>${o.code}</b> • ${o.queue_no} • ${o.payment_method} • <span class="badge ${o.payment_status === 'paid' ? 'paid' : ''}">${o.payment_status === 'paid' ? 'LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI COUNTER' : 'BELUM BAYAR'}</span>
+    box.innerHTML = `<div class="track-card">
+      <div class="row" style="justify-content:space-between"><b style="font-size:18px">${o.code}</b>
+      <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${o.payment_status === 'paid' ? '✓ LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI COUNTER' : 'BELUM BAYAR'}</span></div>
+      <div class="muted">${o.queue_no} • ${o.payment_method} • ${o.customer_name} • ${rp(o.total)}</div>
       <div class="timeline">${pills}</div>
-      <small>${o.customer_name} • Total ${rp(o.total)} • ${o.created_at}</small>
-      ${o.payment_method !== 'CASH' && o.payment_status !== 'paid' && o.status !== 'dibatalkan' ? `<br><button class="btn" style="margin-top:8px" onclick="showBayar(lastLacak)">Bayar Sekarang</button>` : ''}
+      <small class="muted">${o.created_at}</small>
+      ${o.payment_method !== 'CASH' && o.payment_status !== 'paid' && o.status !== 'dibatalkan' ? `<br><button class="btn" style="margin-top:8px" onclick="showBayar(lastLacak)">Bayar Sekarang →</button>` : ''}
     </div>`;
     lastLacak = o;
     if (o.payment_method !== 'CASH' && o.payment_status !== 'paid') showBayarRef = o;
-  } catch (e) { box.innerHTML = `<p style="color:red">${e.message}</p>`; }
+  } catch (e) { box.innerHTML = `<div class="warn">⚠️ ${e.message}</div>`; }
 }
-document.addEventListener('click', (e) => { if (e.target.textContent === 'Bayar Sekarang' && showBayarRef) showBayar(showBayarRef); });
+document.addEventListener('click', (e) => { if (e.target.textContent.includes('Bayar Sekarang') && showBayarRef) showBayar(showBayarRef); });
+document.querySelectorAll('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); }));
 init();
