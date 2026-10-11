@@ -2,7 +2,7 @@ name: Deploy Frontend ke GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['frontend/**', '.github/workflows/deploy-pages.yml']
+    paths: ['index.html', 'admin.html', 'app.js', 'admin.js', 'api.js', 'config.js', 'style.css', '.nojekyll', '.github/workflows/deploy-pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,6 +22,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: frontend
+          path: .
       - id: deployment
         uses: actions/deploy-pages@v4
