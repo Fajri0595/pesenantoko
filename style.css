@@ -101,20 +101,37 @@ header.top nav a:hover,header.top nav button:hover{border-color:var(--brand);bac
 .btn.green{background:var(--brand)}.btn:disabled{opacity:.6;cursor:not-allowed}
 .btn.sm{padding:7px 12px;font-size:13px;border-radius:9px}
 
-/* Cart FAB + drawer */
+/* Shop layout: menu + keranjang menyatu */
+.shop{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+.cart-panel{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:76px}
+.cart-panel.flash{animation:flash 1s}
+@keyframes flash{30%{box-shadow:0 0 0 4px rgba(62,107,79,.35)}}
+.cart-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cart-head b{font-size:17px;color:var(--brand-d)}
+.cart-items{padding:4px 18px}
+.cart-items .empty{padding:26px 6px}
+.cart-foot{padding:14px 18px 18px;border-top:1px solid var(--line);background:#fffdf9}
+.ci{display:grid;grid-template-columns:58px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line);align-items:center}
+.ci:last-child{border-bottom:0}
+.ci-thumb{width:58px;height:58px;border-radius:12px;object-fit:cover;background:#ece5d3;display:block}
+.ci-info{min-width:0}
+.ci-info b{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-info .qty{margin-top:6px}
+.qty .link{background:none;border:0;color:var(--muted);cursor:pointer;font-size:12.5px;text-decoration:underline;padding:4px}
+.ci-total{font-size:14px;white-space:nowrap}
+@media(min-width:1024px){
+  .shop{grid-template-columns:1fr 360px}
+  .cart-panel{position:sticky;top:76px}
+  .cart-items{max-height:54vh;overflow:auto}
+  .cart-fab{display:none}
+}
+
+/* Cart FAB (mobile) */
 .cart-fab{position:fixed;right:18px;bottom:18px;background:var(--brand-d);color:#fff;border-radius:999px;padding:15px 22px;font-weight:800;
   cursor:pointer;z-index:30;box-shadow:0 12px 30px rgba(42,76,55,.4);border:0;font-size:15px;transition:.2s}
 .cart-fab:hover{transform:scale(1.03)}
 .cart-fab.pop{animation:pop .35s}
 @keyframes pop{40%{transform:scale(1.1)}}
-.drawer{position:fixed;right:0;top:0;height:100dvh;width:min(430px,100%);background:#fffdf9;z-index:40;
-  box-shadow:-12px 0 40px rgba(60,50,30,.22);display:none;flex-direction:column}
-.drawer.open{display:flex;animation:slide .25s}
-@keyframes slide{from{transform:translateX(40px);opacity:.5}}
-.drawer header.top{position:static;border-radius:0}
-.drawer .items{flex:1;overflow:auto;padding:14px}
-.drawer .foot{padding:14px;border-top:1px solid var(--line);background:#fffdf9}
-.cart-line{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding:10px 0}
 .empty{text-align:center;color:var(--muted);padding:30px 10px;line-height:1.7}
 .total-row{display:flex;justify-content:space-between;font-size:15px;margin:4px 0}
 

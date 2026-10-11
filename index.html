@@ -38,14 +38,31 @@
     <div class="step"><span class="n">4</span><b>Ambil</b><span>Tunjukkan kode GC-XXXX ke counter.</span></div>
   </div>
 
-  <div class="sec"><div><h2 id="menu">Jelajahi Menu</h2><p id="menuCount">Memuat...</p></div></div>
-  <div class="toolbar">
-    <div class="search"><input id="q" type="text" placeholder="Cari mie level, siomay, es..." autocomplete="off"></div>
-    <select id="kategori" aria-label="Kategori"><option value="">Semua kategori</option></select>
-  </div>
-  <div id="pills" class="pills"></div>
-  <div id="grid" class="grid">
-    <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+  <div class="shop">
+    <div class="shop-main">
+      <div class="sec"><div><h2 id="menu">Jelajahi Menu</h2><p id="menuCount">Memuat...</p></div></div>
+      <div class="toolbar">
+        <div class="search"><input id="q" type="text" placeholder="Cari mie level, siomay, es..." autocomplete="off"></div>
+        <select id="kategori" aria-label="Kategori"><option value="">Semua kategori</option></select>
+      </div>
+      <div id="pills" class="pills"></div>
+      <div id="grid" class="grid">
+        <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+      </div>
+    </div>
+    <aside id="cartPanel" class="cart-panel" aria-label="Keranjang belanja">
+      <div class="cart-head">
+        <div><b>Keranjang</b><p class="muted" id="cartSub" style="margin:2px 0 0">0 item</p></div>
+        <span class="badge" id="cartBadge">Takeaway</span>
+      </div>
+      <div id="citems" class="cart-items"></div>
+      <div class="cart-foot">
+        <div class="total-row"><span>Subtotal</span><b id="csub">Rp0</b></div>
+        <div class="total-row muted"><span>Service</span><span>Rp2.000</span></div>
+        <div class="total-row" style="font-size:18px"><span>Total</span><b id="ctotal">Rp0</b></div>
+        <button class="btn" style="width:100%;margin-top:10px;padding:14px" onclick="openCheckout()">Checkout</button>
+      </div>
+    </aside>
   </div>
 
   <div class="sec"><div><h2 id="lacak">Lacak Pesanan</h2><p>Masukkan kode dari struk (contoh GC-AB12CD).</p></div></div>
@@ -62,18 +79,6 @@
 
 <button id="fab" class="cart-fab" onclick="toggleCart(true)">Keranjang • <span id="cnt">0</span> • <span id="fabTotal">Rp0</span></button>
 <div id="toast"></div>
-
-<div id="drawer" class="drawer" role="dialog" aria-label="Keranjang">
-  <header class="top"><div class="brand"><div class="brand-mark">K</div><div><div class="logo">Keranjang</div><small>TAKEAWAY</small></div></div>
-  <nav><button onclick="toggleCart(false)">Tutup</button></nav></header>
-  <div id="citems" class="items"></div>
-  <div class="foot">
-    <div class="total-row"><span>Subtotal</span><b id="csub">Rp0</b></div>
-    <div class="total-row muted"><span>Service</span><span>Rp2.000</span></div>
-    <div class="total-row" style="font-size:18px"><span>Total</span><b id="ctotal">Rp0</b></div>
-    <button class="btn" style="width:100%;margin-top:10px;padding:14px" onclick="openCheckout()">Checkout</button>
-  </div>
-</div>
 
 <div id="mCheckout" class="modal"><div class="box">
   <h2>Checkout Takeaway</h2><div class="muted">Langkah 1 dari 2 — data pengambil dan pembayaran</div>

@@ -86,14 +86,18 @@ function saveCart(pop) {
 function renderCart() {
   const count = CART.reduce((a, c) => a + c.qty, 0);
   $('cnt').textContent = count;
+  const sub2 = $('cartSub'); if (sub2) sub2.textContent = count + ' item';
   const box = $('citems'); box.innerHTML = '';
   let sub = 0;
   CART.forEach((c, i) => {
     sub += c.price * c.qty;
-    const d = document.createElement('div'); d.className = 'cart-line';
-    d.innerHTML = `<div><b>${c.name}</b><br><small class="muted">${c.level ? c.level + ' • ' : ''}${rp(c.price)} x ${c.qty} = <b>${rp(c.price * c.qty)}</b></small></div>
-      <div class="qty"><button onclick="chQty(${i},-1)">−</button><span><b>${c.qty}</b></span><button onclick="chQty(${i},1)">+</button>
-      <button onclick="rmItem(${i})" title="hapus">Hapus</button></div>`;
+    const d = document.createElement('div'); d.className = 'ci';
+    const img = foodImg({ name: c.name, id: c.menu_id });
+    d.innerHTML = `<img class="ci-thumb" src="${img}" alt="${c.name}" loading="lazy" onerror="this.remove()">
+      <div class="ci-info"><b>${c.name}</b><small class="muted">${c.level ? c.level + ' • ' : ''}${rp(c.price)} / pcs</small>
+        <div class="qty"><button onclick="chQty(${i},-1)" aria-label="kurang">−</button><span><b>${c.qty}</b></span><button onclick="chQty(${i},1)" aria-label="tambah">+</button>
+        <button class="link" onclick="rmItem(${i})">Hapus</button></div></div>
+      <div class="ci-total"><b>${rp(c.price * c.qty)}</b></div>`;
     box.appendChild(d);
   });
   if (!CART.length) box.innerHTML = '<div class="empty">Keranjang kosong.<br>Pilih menu favorit terlebih dahulu.</div>';
@@ -104,7 +108,11 @@ function renderCart() {
 }
 function chQty(i, d) { CART[i].qty += d; if (CART[i].qty <= 0) CART.splice(i, 1); saveCart(); }
 function rmItem(i) { CART.splice(i, 1); saveCart(); }
-function toggleCart(open) { $('drawer').classList.toggle('open', open); }
+function toggleCart() {
+  const p = $('cartPanel'); if (!p) return;
+  p.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  p.classList.remove('flash'); void p.offsetWidth; p.classList.add('flash');
+}
 
 function renderPays() {
   const box = $('pays'); box.innerHTML = '';
@@ -119,7 +127,6 @@ function renderPays() {
 }
 function openCheckout() {
   if (!CART.length) { toast('Keranjang masih kosong'); return; }
-  toggleCart(false);
   const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
   $('coSum').innerHTML = `${CART.length} jenis item • Subtotal ${rp(sub)} + service Rp2.000 = <b>${rp(sub + 2000)}</b>`;
   openM('mCheckout');
