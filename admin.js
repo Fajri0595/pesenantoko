@@ -25,6 +25,9 @@ function logout() { localStorage.removeItem('admin_token'); location.reload(); }
 function tab(t) {
   document.getElementById('vOrders').style.display = t === 'orders' ? 'block' : 'none';
   document.getElementById('vMenu').style.display = t === 'menu' ? 'block' : 'none';
+  document.getElementById('vLaporan').style.display = t === 'laporan' ? 'block' : 'none';
+  document.getElementById('fstat').style.display = t === 'orders' ? 'block' : 'none';
+  if (t === 'laporan') loadLaporan();
 }
 async function loadStats() {
   try {
@@ -33,7 +36,9 @@ async function loadStats() {
       `<div class="stat-card st-a"><b>${s.aktif}</b><span>pesanan aktif perlu proses</span></div>` +
       `<div class="stat-card st-b"><b>${s.hari_ini}</b><span>pesanan hari ini</span></div>` +
       `<div class="stat-card st-c"><b>${rp(s.omzet)}</b><span>omzet hari ini</span></div>`;
-  } catch (e) { /* abaikan */ }
+  } catch (e) {
+    document.getElementById('stats').innerHTML = '<div class="warn">Ringkasan gagal dimuat: ' + e.message + '</div>';
+  }
 }
 async function loadOrders() {
   const f = document.getElementById('fstat').value;
@@ -59,6 +64,22 @@ async function loadOrders() {
       box.appendChild(d);
     });
   } catch (e) { box.innerHTML = '<div class="warn">' + e.message + '</div>'; }
+}
+async function loadLaporan() {
+  const periode = document.getElementById('fperiode').value;
+  const sum = document.getElementById('lapSum'), tbl = document.getElementById('lapTable');
+  tbl.innerHTML = '<p class="muted">Memuat laporan...</p>';
+  try {
+    const L = await apiGet('laporan', { token: token(), periode });
+    const nama = { harian: 'Hari ini', mingguan: '7 hari terakhir', bulanan: 'Bulan berjalan' }[L.periode] || L.periode;
+    sum.innerHTML =
+      `<div class="stat-card st-a"><b>${L.total_pesanan}</b><span>pesanan • ${nama}</span></div>` +
+      `<div class="stat-card st-b"><b>${rp(L.omzet)}</b><span>omzet • ${nama}</span></div>` +
+      `<div class="stat-card st-c"><b>${L.lunas}</b><span>lunas • ${L.menunggu} menunggu</span></div>`;
+    tbl.innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Tanggal</th><th>Pesanan</th><th>Omzet</th></tr>' +
+      L.rows.map((r) => `<tr><td>${r.tanggal}</td><td>${r.pesanan}</td><td>${rp(r.omzet)}</td></tr>`).join('') +
+      `<tr><td><b>Total</b></td><td><b>${L.total_pesanan}</b></td><td><b>${rp(L.omzet)}</b></td></tr></table></div>`;
+  } catch (e) { tbl.innerHTML = '<div class="warn">Laporan gagal dimuat: ' + e.message + '</div>'; }
 }
 async function setSt(id, status) { await apiPost({ action: 'adminUpdateOrder', token: token(), id, status }); loadOrders(); loadStats(); }
 async function setPay(id, payment_status) { await apiPost({ action: 'adminUpdateOrder', token: token(), id, payment_status }); loadOrders(); loadStats(); }

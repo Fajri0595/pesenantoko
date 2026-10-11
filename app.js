@@ -181,14 +181,32 @@ async function simPay(code) {
   } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Bayar'; toast(e.message); }
 }
 function showStruk(o) {
+  const lunas = o.payment_status === 'paid';
+  const payLabel = (PAYMENTS[o.payment_method] && PAYMENTS[o.payment_method].label) || o.payment_method;
+  const tgl = o.created_at || new Date().toLocaleString('id-ID');
   $('sBody').innerHTML = `
-    <div class="qrbox" style="margin-bottom:12px"><div class="muted">KODE PENGAMBILAN</div>
-    <div style="font-size:30px;font-weight:800;letter-spacing:2px">${o.code}</div>
-    <div>Antrian <b>${o.queue_no}</b> • Estimasi <b>15–20 mnt</b></div></div>
-    <p>${o.payment_method === 'CASH' ? 'Bayar <b>Cash ' + rp(o.total) + '</b> saat ambil di counter.' : 'Sudah <b>LUNAS</b> (' + o.payment_method + ').'}</p>
-    <table>${o.items.map((i) => `<tr><td>${i.qty} x ${i.menu_name} <small class="muted">${i.level || ''}</small></td><td style="text-align:right">${rp(i.price * i.qty)}</td></tr>`).join('')}
-    <tr><td>Service</td><td style="text-align:right">${rp(o.service_fee)}</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>${rp(o.total)}</b></td></tr></table>
-    <p><small class="muted">Tunjukkan kode ini ke counter saat mengambil.</small></p>`;
+    <div id="strukPrint" class="struk">
+      <div class="struk-head"><b>UMKM MANDIRI</b><span>Takeaway Tanpa Antri</span></div>
+      <div class="struk-row"><span>No. Struk</span><b>${o.code}</b></div>
+      <div class="struk-row"><span>Antrian</span><b>${o.queue_no}</b></div>
+      <div class="struk-row"><span>Tanggal</span><span>${tgl}</span></div>
+      <div class="struk-row"><span>Pelanggan</span><span>${o.customer_name} (${o.customer_phone})</span></div>
+      ${o.note ? `<div class="struk-row"><span>Catatan</span><span>${o.note}</span></div>` : ''}
+      <div class="struk-div"></div>
+      <table>${o.items.map((i) => `<tr><td>${i.qty} x ${i.menu_name} <small class="muted">${i.level || ''}</small><br><small class="muted">${rp(i.price)} / pcs</small></td><td style="text-align:right;white-space:nowrap">${rp(i.price * i.qty)}</td></tr>`).join('')}
+      <tr><td>Subtotal</td><td style="text-align:right">${rp(o.subtotal)}</td></tr>
+      <tr><td>Service</td><td style="text-align:right">${rp(o.service_fee)}</td></tr>
+      <tr><td><b>Total</b></td><td style="text-align:right"><b>${rp(o.total)}</b></td></tr></table>
+      <div class="struk-div"></div>
+      <div class="struk-row"><span>Metode</span><b>${payLabel}</b></div>
+      <div class="struk-row"><span>Status bayar</span><span class="badge ${lunas ? 'paid' : 'pending'}">${lunas ? 'LUNAS' : (o.payment_method === 'CASH' ? 'BAYAR DI COUNTER' : 'MENUNGGU')}</span></div>
+      <div class="struk-row"><span>Estimasi siap</span><span>15–20 menit</span></div>
+      <div class="qrbox" style="margin-top:12px"><div style="font-size:26px;font-weight:800;letter-spacing:2px">${o.code}</div>
+      <div>Tunjukkan kode ini ke counter</div></div>
+      <p class="muted" style="text-align:center">Terima kasih sudah memesan di UMKM Mandiri</p>
+    </div>
+    <div class="row no-print" style="margin-top:12px"><button class="btn ghost" onclick="window.print()">Cetak</button>
+    <button class="btn" onclick="lacakDariStruk()">Lacak Status</button></div>`;
   openM('mStruk');
 }
 function lacakDariStruk() { closeM('mStruk'); $('kode').value = lastOrder.code; lacak(); $('lacak').scrollIntoView({ behavior: 'smooth' }); }

@@ -183,6 +183,19 @@ th{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted
 footer.site{text-align:center;color:var(--muted);font-size:12.5px;padding:26px 10px 10px}
 footer.site .pay-row{display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap}
 footer.site .pay-row span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-weight:700;font-size:12px;color:var(--brand-d)}
+
+/* Struk */
+.struk{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:16px}
+.struk-head{text-align:center;margin-bottom:10px}
+.struk-head b{display:block;font-size:18px;color:var(--brand-d);letter-spacing:1px}
+.struk-head span{font-size:12px;color:var(--muted)}
+.struk-row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;padding:2px 0}
+.struk-div{border-top:1px dashed var(--line);margin:10px 0}
+@media print{
+  header.top,.wrap,.cart-fab,#toast,.modal .no-print{display:none !important}
+  .modal{position:static;background:none;padding:0}
+  .modal .box{box-shadow:none;max-height:none;width:100%}
+}
 @media(max-width:640px){
   .hero{padding:24px 20px}
   .cart-fab{left:14px;right:14px;text-align:center}
