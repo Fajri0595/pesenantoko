@@ -1,7 +1,7 @@
 // Admin (GitHub Pages) -> GAS — v3: thumbnail foto, tanpa ikon.
 const rp = (n) => 'Rp' + (n || 0).toLocaleString('id-ID');
 const token = () => localStorage.getItem('admin_token') || '';
-const ST_LABEL = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan', kedaluwarsa: 'Kedaluwarsa' };
+const ST_LABEL = { menunggu_pembayaran: 'Menunggu Pembayaran', dimasak: 'Sedang Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan', kedaluwarsa: 'Kedaluwarsa' };
 
 async function me() {
   if (!isConfigured()) document.getElementById('cfgWarn').style.display = 'block';
@@ -26,7 +26,7 @@ async function applyBrand() {
 }
 async function login() {
   const username = document.getElementById('u').value, password = document.getElementById('p').value;
-  document.getElementById('msg').textContent = 'Memeriksa...';
+  document.getElementById('msg').textContent = 'Memverifikasi kredensial...';
   try {
     const j = await apiPost({ action: 'adminLogin', username, password });
     localStorage.setItem('admin_token', j.token);
@@ -47,21 +47,21 @@ async function loadStats() {
   try {
     const s = await apiGet('stats', { token: token() });
     document.getElementById('stats').innerHTML =
-      `<div class="stat-card st-a"><b>${s.aktif}</b><span>pesanan aktif perlu proses</span></div>` +
-      `<div class="stat-card st-b"><b>${s.hari_ini}</b><span>pesanan hari ini</span></div>` +
-      `<div class="stat-card st-c"><b>${rp(s.omzet)}</b><span>omzet hari ini</span></div>`;
+      `<div class="stat-card st-a"><b>${s.aktif}</b><span>pesanan aktif yang perlu diproses</span></div>` +
+      `<div class="stat-card st-b"><b>${s.hari_ini}</b><span>total pesanan hari ini</span></div>` +
+      `<div class="stat-card st-c"><b>${rp(s.omzet)}</b><span>estimasi omzet hari ini</span></div>`;
   } catch (e) {
-    document.getElementById('stats').innerHTML = '<div class="warn">Ringkasan gagal dimuat: ' + e.message + '</div>';
+    document.getElementById('stats').innerHTML = '<div class="warn">Ringkasan belum dapat dimuat: ' + e.message + '</div>';
   }
 }
 async function loadOrders() {
   const f = document.getElementById('fstat').value;
   const box = document.getElementById('vOrders');
-  box.innerHTML = '<p class="muted">Memuat pesanan...</p>';
+  box.innerHTML = '<p class="muted">Memuat data pesanan...</p>';
   try {
     const rows = await apiGet('adminOrders', Object.assign({ token: token() }, f ? { status: f } : {}));
     box.innerHTML = '';
-    if (!rows.length) { box.innerHTML = '<div class="empty">Tidak ada pesanan pada filter ini.</div>'; return; }
+    if (!rows.length) { box.innerHTML = '<div class="empty">Belum ada pesanan pada filter ini.</div>'; return; }
     rows.forEach((o) => {
       const d = document.createElement('div'); d.className = 'order-card';
       d.innerHTML = `<div class="row" style="justify-content:space-between">
@@ -70,11 +70,11 @@ async function loadOrders() {
       <div class="meta">${o.queue_no} • ${o.customer_name} (${o.customer_phone}) • ${o.payment_method} • <b>${rp(o.total)}</b> • ${o.created_at || ''}</div>
       <div class="meta">${(o.items || []).map((i) => i.qty + ' x ' + i.menu_name + ' ' + (i.level || '')).join(', ')}${o.note ? ' • Catatan: ' + o.note : ''}</div>
       <div class="row" style="margin-top:8px">
-      <button class="btn sm" onclick="setSt(${o.id},'dimasak')">Dimasak</button>
+      <button class="btn sm" onclick="setSt(${o.id},'dimasak')">Proses Masak</button>
       <button class="btn sm" onclick="setSt(${o.id},'siap_diambil')">Siap Diambil</button>
-      <button class="btn sm green" onclick="setSt(${o.id},'selesai')">Selesai</button>
-      <button class="btn sm ghost" onclick="setSt(${o.id},'dibatalkan')">Batal</button>
-      <button class="btn sm ghost" onclick="setPay(${o.id},'paid')">Lunas (cash)</button></div>`;
+      <button class="btn sm green" onclick="setSt(${o.id},'selesai')">Selesaikan</button>
+      <button class="btn sm ghost" onclick="setSt(${o.id},'dibatalkan')">Batalkan</button>
+      <button class="btn sm ghost" onclick="setPay(${o.id},'paid')">Tandai Lunas</button></div>`;
       box.appendChild(d);
     });
   } catch (e) { box.innerHTML = '<div class="warn">' + e.message + '</div>'; }
@@ -82,14 +82,14 @@ async function loadOrders() {
 async function loadLaporan() {
   const periode = document.getElementById('fperiode').value;
   const sum = document.getElementById('lapSum'), tbl = document.getElementById('lapTable');
-  tbl.innerHTML = '<p class="muted">Memuat laporan...</p>';
+  tbl.innerHTML = '<p class="muted">Menyusun laporan penjualan...</p>';
   try {
     const L = await apiGet('laporan', { token: token(), periode });
-    const nama = { harian: 'Hari ini', mingguan: '7 hari terakhir', bulanan: 'Bulan berjalan' }[L.periode] || L.periode;
+    const nama = { harian: 'Hari Ini', mingguan: '7 Hari Terakhir', bulanan: 'Bulan Berjalan' }[L.periode] || L.periode;
     sum.innerHTML =
-      `<div class="stat-card st-a"><b>${L.total_pesanan}</b><span>pesanan • ${nama}</span></div>` +
-      `<div class="stat-card st-b"><b>${rp(L.omzet)}</b><span>omzet • ${nama}</span></div>` +
-      `<div class="stat-card st-c"><b>${L.lunas}</b><span>lunas • ${L.menunggu} menunggu</span></div>`;
+      `<div class="stat-card st-a"><b>${L.total_pesanan}</b><span>total pesanan • ${nama}</span></div>` +
+      `<div class="stat-card st-b"><b>${rp(L.omzet)}</b><span>total omzet • ${nama}</span></div>` +
+      `<div class="stat-card st-c"><b>${L.lunas}</b><span>pesanan lunas • ${L.menunggu} menunggu</span></div>`;
     tbl.innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Tanggal</th><th>Pesanan</th><th>Omzet</th></tr>' +
       L.rows.map((r) => `<tr><td>${r.tanggal}</td><td>${r.pesanan}</td><td>${rp(r.omzet)}</td></tr>`).join('') +
       `<tr><td><b>Total</b></td><td><b>${L.total_pesanan}</b></td><td><b>${rp(L.omzet)}</b></td></tr></table></div>` +
@@ -98,7 +98,7 @@ async function loadLaporan() {
         ? '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Menu</th><th>Terjual</th><th>Omzet</th></tr>' +
           L.items.map((it) => `<tr><td>${it.menu}</td><td>${it.qty} pcs</td><td>${rp(it.omzet)}</td></tr>`).join('') + '</table></div>'
         : '<p class="muted">Belum ada item terjual pada periode ini.</p>');
-  } catch (e) { tbl.innerHTML = '<div class="warn">Laporan gagal dimuat: ' + e.message + '</div>'; }
+  } catch (e) { tbl.innerHTML = '<div class="warn">Laporan belum dapat dimuat: ' + e.message + '</div>'; }
 }
 function printLaporan() {
   document.body.classList.add('p-laporan');
@@ -110,11 +110,11 @@ async function setPay(id, payment_status) { await apiPost({ action: 'adminUpdate
 async function loadMenu() {
   try {
     const rows = await apiGet('adminMenu', { token: token() });
-    document.getElementById('mlist').innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Foto</th><th>Menu</th><th>Harga</th><th>Stok</th><th>Kategori</th><th>Status</th><th></th></tr>' +
+    document.getElementById('mlist').innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Foto</th><th>Nama Menu</th><th>Harga</th><th>Stok</th><th>Kategori</th><th>Status</th><th>Aksi</th></tr>' +
       rows.map((m) => `<tr><td><img class="menu-thumb" src="${foodImg(m)}" alt="${m.name}" loading="lazy" onerror="this.remove()"></td>
       <td><b>${m.name}</b></td><td>${rp(m.price)}</td><td>${(m.stok === '' || m.stok === undefined || m.stok === null || Number(m.stok) === -1) ? '∞' : m.stok}</td><td>${m.category}</td>
-      <td><span class="badge ${m.is_available ? 'paid' : 'pending'}">${m.is_available ? 'Aktif' : 'Nonaktif'}</span></td>
-      <td style="white-space:nowrap"><button class="btn sm ghost" onclick='editM(${JSON.stringify(m).replace(/'/g, '&#39;')})'>Edit</button> <button class="btn sm ghost" onclick="delM(${m.id})">Hapus</button></td></tr>`).join('') + '</table></div>';
+      <td><span class="badge ${m.is_available ? 'paid' : 'pending'}">${m.is_available ? 'Tersedia' : 'Nonaktif'}</span></td>
+      <td style="white-space:nowrap"><button class="btn sm ghost" onclick='editM(${JSON.stringify(m).replace(/'/g, '&#39;')})'>Ubah</button> <button class="btn sm ghost" onclick="delM(${m.id})">Hapus</button></td></tr>`).join('') + '</table></div>';
   } catch (e) { document.getElementById('mlist').innerHTML = '<div class="warn">' + e.message + '</div>'; }
 }
 function editM(m) {
@@ -139,13 +139,13 @@ async function saveMenu() {
   };
   try { await apiPost(body); resetForm(); loadMenu(); } catch (e) { alert(e.message); }
 }
-async function delM(id) { if (!confirm('Hapus menu ini?')) return; await apiPost({ action: 'adminDeleteMenu', token: token(), id }); loadMenu(); }
+async function delM(id) { if (!confirm('Hapus menu ini dari katalog? Tindakan ini tidak dapat dibatalkan.')) return; await apiPost({ action: 'adminDeleteMenu', token: token(), id }); loadMenu(); }
 
 // ---------- Pengaturan ----------
 const PAY_METHODS = ['QRIS', 'GOPAY', 'OVO', 'DANA', 'CASH'];
 async function loadSettings() {
   const box = document.getElementById('spays');
-  box.innerHTML = '<p class="muted">Memuat...</p>';
+  box.innerHTML = '<p class="muted">Memuat pengaturan toko...</p>';
   try {
     const s = await apiGet('adminSettings', { token: token() });
     document.getElementById('sname').value = s.store_name || '';
@@ -163,8 +163,8 @@ async function loadSettings() {
       const on = s['pay_' + m + '_enabled'] === '1';
       const d = document.createElement('div'); d.className = 'payopt' + (on ? ' sel' : '');
       d.innerHTML = `<input type="checkbox" id="spay_${m}" ${on ? 'checked' : ''} style="width:auto" onchange="this.closest('.payopt').classList.toggle('sel',this.checked)">
-        <div style="flex:1"><input type="text" id="slabel_${m}" value="${(s['pay_' + m + '_label'] || m).replace(/"/g, '&quot;')}" placeholder="Label">
-        <input type="text" id="sdesc_${m}" value="${(s['pay_' + m + '_desc'] || '').replace(/"/g, '&quot;')}" placeholder="Deskripsi" style="margin-top:6px"></div>`;
+        <div style="flex:1"><input type="text" id="slabel_${m}" value="${(s['pay_' + m + '_label'] || m).replace(/"/g, '&quot;')}" placeholder="Nama tampilan">
+        <input type="text" id="sdesc_${m}" value="${(s['pay_' + m + '_desc'] || '').replace(/"/g, '&quot;')}" placeholder="Deskripsi singkat" style="margin-top:6px"></div>`;
       box.appendChild(d);
     });
     document.getElementById('smsg').textContent = '';
@@ -188,10 +188,10 @@ async function saveSettings() {
     settings['pay_' + m + '_label'] = document.getElementById('slabel_' + m).value;
     settings['pay_' + m + '_desc'] = document.getElementById('sdesc_' + m).value;
   });
-  document.getElementById('smsg').textContent = 'Menyimpan...';
+  document.getElementById('smsg').textContent = 'Menyimpan pengaturan...';
   try {
     await apiPost({ action: 'adminUpdateSettings', token: token(), settings });
-    document.getElementById('smsg').textContent = 'Tersimpan. Halaman publik ikut diperbarui otomatis.';
+    document.getElementById('smsg').textContent = 'Pengaturan berhasil disimpan. Halaman publik akan diperbarui secara otomatis.';
     loadStats(); applyBrand();
   } catch (e) { document.getElementById('smsg').textContent = e.message; }
 }

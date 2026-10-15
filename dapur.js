@@ -5,7 +5,7 @@ let kenal = {}, suara = false, ctxSuara = null;
 
 async function pair() {
   const username = document.getElementById('du').value, password = document.getElementById('dp').value;
-  document.getElementById('dmsg').textContent = 'Memeriksa...';
+  document.getElementById('dmsg').textContent = 'Memverifikasi kredensial...';
   try {
     const j = await apiPost({ action: 'adminLogin', username, password });
     localStorage.setItem('admin_token', j.token);
@@ -16,7 +16,7 @@ function keluar() { localStorage.removeItem('admin_token'); location.reload(); }
 function aktifkanSuara() {
   try { ctxSuara = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* abaikan */ }
   suara = true;
-  document.getElementById('btnSound').textContent = 'Suara Aktif';
+  document.getElementById('btnSound').textContent = 'Notifikasi Suara Aktif';
   bip(2);
 }
 function bip(kali) {
@@ -35,7 +35,7 @@ function bip(kali) {
 function panggil(queue, nama) {
   bip(2);
   try {
-    const u = new SpeechSynthesisUtterance('Nomor antrian ' + queue + ', pesanan atas nama ' + nama + ', silakan diambil di counter.');
+    const u = new SpeechSynthesisUtterance('Nomor antrean ' + queue + ', pesanan atas nama ' + nama + ', telah siap dan dapat diambil di counter. Terima kasih.');
     u.lang = 'id-ID';
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   } catch (e) { /* abaikan */ }
@@ -59,25 +59,25 @@ async function poll() {
     });
     if (baru > 0) bip(3);
     document.getElementById('dCount').textContent =
-      masak.length + ' dimasak • ' + siap.length + ' siap diambil • diperbarui ' + new Date().toLocaleTimeString('id-ID');
+      masak.length + ' sedang dimasak • ' + siap.length + ' siap diambil • diperbarui ' + new Date().toLocaleTimeString('id-ID');
     gambar(document.getElementById('dMasak'), masak, false);
     gambar(document.getElementById('dSiap'), siap, true);
   } catch (e) {
-    document.getElementById('dCount').textContent = 'Gagal memuat: ' + e.message;
+    document.getElementById('dCount').textContent = 'Data belum dapat dimuat: ' + e.message;
   }
   setTimeout(poll, 15000);
 }
 function gambar(box, list, sudahSiap) {
   box.innerHTML = '';
-  if (!list.length) { box.innerHTML = '<div class="empty">Kosong</div>'; return; }
+  if (!list.length) { box.innerHTML = '<div class="empty">Belum ada pesanan</div>'; return; }
   list.forEach((o) => {
     const d = document.createElement('div');
     d.className = 'antri-card' + (sudahSiap ? ' siap' : '');
     d.innerHTML = `<div class="antri-top"><span class="antri-no">${o.queue_no}</span><span class="badge">${elapsed(o.created_at)}</span></div>
       <div class="antri-meta"><b>${o.code}</b> • ${o.customer_name}<br>${(o.items || []).map((i) => i.qty + ' x ' + i.menu_name).join(', ')}</div>
       <div class="row">
-        <button class="btn sm" onclick="panggil('${o.queue_no}','${String(o.customer_name).replace(/'/g, '')}')">Panggil</button>
-        ${sudahSiap ? '' : `<button class="btn sm green" onclick="tandaiSiap(${o.id})">Tandai Siap</button>`}
+        <button class="btn sm" onclick="panggil('${o.queue_no}','${String(o.customer_name).replace(/'/g, '')}')">Panggil Antrean</button>
+        ${sudahSiap ? '' : `<button class="btn sm green" onclick="tandaiSiap(${o.id})">Tandai Siap Diambil</button>`}
       </div>`;
     box.appendChild(d);
   });

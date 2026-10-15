@@ -2,7 +2,7 @@
 let MENU = [], CART = [];
 try { CART = JSON.parse(localStorage.getItem('cart') || '[]'); } catch (e) { CART = []; }
 let PAYMENTS = {}, paySel = 'QRIS', lastOrder = null, lastLacak = null, showBayarRef = null;
-let SETTINGS = { store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • TANPA ANTRI', service_fee: 2000, estimasi: '15–20 menit', batas_bayar_menit: 15, jam_buka: '', jam_tutup: '', buka: true };
+let SETTINGS = { store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • PRAKTIS & TANPA ANTRE', service_fee: 2000, estimasi: '15–20 menit', batas_bayar_menit: 15, jam_buka: '', jam_tutup: '', buka: true };
 const stokOf = (m) => (m.stok === '' || m.stok === undefined || m.stok === null) ? -1 : (isNaN(parseInt(m.stok, 10)) ? -1 : parseInt(m.stok, 10));
 const fee = () => SETTINGS.service_fee || 0;
 const storeSlug = () => SETTINGS.store_name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'TOKO';
@@ -61,11 +61,11 @@ function applySettings(s) {
     PAYMENTS = s.payments;
     if (!PAYMENTS[paySel]) paySel = Object.keys(PAYMENTS)[0];
   }
-  document.title = SETTINGS.store_name + ' — Takeaway Tanpa Antri';
+  document.title = SETTINGS.store_name + ' — Layanan Takeaway';
   const bn = $('brandName'); if (bn) bn.textContent = SETTINGS.store_name;
   const bt = $('brandTag'); if (bt) bt.textContent = SETTINGS.tagline;
   const fb = $('footBrand'); if (fb) fb.textContent = SETTINGS.store_name;
-  const ec = $('estChip'); if (ec) ec.textContent = 'Siap sekitar ' + SETTINGS.estimasi;
+  const ec = $('estChip'); if (ec) ec.textContent = 'Estimasi siap ' + SETTINGS.estimasi;
   const sl = $('svcLabel'); if (sl) sl.textContent = rp(fee());
 }
 function buildPills(kats) {
@@ -97,15 +97,15 @@ function render() {
     d.innerHTML = `<div class="thumb"><img src="${img}" alt="${m.name}" loading="lazy" onerror="this.remove()"></div><div class="body">
       <div class="cat">${m.category}</div><h3>${m.name}</h3>
       <div class="desc">${m.description || ''}</div>
-      <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge">${stokOf(m) === -1 ? 'Tersedia' : 'Sisa ' + stokOf(m)}</span></div>
-      <input id="lv-${m.id}" class="level" type="text" placeholder="Level / catatan — cth. Lv 4" maxlength="20">
+      <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge">${stokOf(m) === -1 ? 'Tersedia' : 'Sisa ' + stokOf(m) + ' porsi'}</span></div>
+       <input id="lv-${m.id}" class="level" type="text" placeholder="Level / catatan — contoh: Lv 4" maxlength="20">
       <div class="act">
-        <div class="qty"><button onclick="addCart(${m.id},-1)" aria-label="kurang">−</button><button onclick="addCart(${m.id},1)" aria-label="tambah">+</button></div>
+        <div class="qty"><button onclick="addCart(${m.id},-1)" aria-label="Kurangi">−</button><button onclick="addCart(${m.id},1)" aria-label="Tambah">+</button></div>
         <button class="add" onclick="addCart(${m.id},1)">Tambah</button>
       </div></div>`;
     g.appendChild(d);
   });
-  if (!g.children.length) g.innerHTML = '<div class="empty">Menu tidak ditemukan. Coba kata kunci lain.</div>';
+  if (!g.children.length) g.innerHTML = '<div class="empty">Menu tidak ditemukan. Silakan coba kata kunci lain.</div>';
 }
 function addCart(id, delta) {
   const m = MENU.find((x) => x.id === id); if (!m) return;
@@ -113,11 +113,11 @@ function addCart(id, delta) {
   if (delta > 0) {
     const sisa = stokOf(m);
     const diKeranjang = CART.filter((c) => c.menu_id === id).reduce((a, c) => a + c.qty, 0);
-    if (sisa !== -1 && diKeranjang + 1 > sisa) { toast('Stok ' + m.name + ' tersisa ' + sisa); return; }
+    if (sisa !== -1 && diKeranjang + 1 > sisa) { toast('Mohon maaf, ' + m.name + ' tersisa ' + sisa + ' porsi'); return; }
     const same = CART.find((c) => c.menu_id === id && (c.level || '') === lv);
     if (same) same.qty = Math.min(20, same.qty + 1);
     else CART.push({ menu_id: id, name: m.name, price: m.price, qty: 1, level: lv });
-    toast(m.name + ' masuk keranjang');
+    toast(m.name + ' telah ditambahkan ke keranjang');
   } else {
     const i = CART.findIndex((c) => c.menu_id === id);
     if (i > -1) { CART[i].qty--; if (CART[i].qty <= 0) CART.splice(i, 1); }
@@ -131,7 +131,7 @@ function saveCart(pop) {
 function renderCart() {
   const count = CART.reduce((a, c) => a + c.qty, 0);
   $('cnt').textContent = count;
-  const sub2 = $('cartSub'); if (sub2) sub2.textContent = count + ' item';
+  const sub2 = $('cartSub'); if (sub2) sub2.textContent = count ? count + ' menu dipilih' : 'Belum ada menu dipilih';
   const box = $('citems'); box.innerHTML = '';
   let sub = 0;
   CART.forEach((c, i) => {
@@ -139,13 +139,13 @@ function renderCart() {
     const d = document.createElement('div'); d.className = 'ci';
     const img = foodImg({ name: c.name, id: c.menu_id });
     d.innerHTML = `<img class="ci-thumb" src="${img}" alt="${c.name}" loading="lazy" onerror="this.remove()">
-      <div class="ci-info"><b>${c.name}</b><small class="muted">${c.level ? c.level + ' • ' : ''}${rp(c.price)} / pcs</small>
-        <div class="qty"><button onclick="chQty(${i},-1)" aria-label="kurang">−</button><span><b>${c.qty}</b></span><button onclick="chQty(${i},1)" aria-label="tambah">+</button>
+      <div class="ci-info"><b>${c.name}</b><small class="muted">${c.level ? c.level + ' • ' : ''}${rp(c.price)} / porsi</small>
+        <div class="qty"><button onclick="chQty(${i},-1)" aria-label="Kurangi">−</button><span><b>${c.qty}</b></span><button onclick="chQty(${i},1)" aria-label="Tambah">+</button>
         <button class="link" onclick="rmItem(${i})">Hapus</button></div></div>
       <div class="ci-total"><b>${rp(c.price * c.qty)}</b></div>`;
     box.appendChild(d);
   });
-  if (!CART.length) box.innerHTML = '<div class="empty">Keranjang kosong.<br>Pilih menu favorit terlebih dahulu.</div>';
+  if (!CART.length) box.innerHTML = '<div class="empty">Keranjang Anda masih kosong.<br>Silakan pilih menu favorit Anda terlebih dahulu.</div>';
   const total = sub + (CART.length ? fee() : 0);
   $('csub').textContent = rp(sub);
   $('ctotal').textContent = rp(total);
@@ -171,10 +171,10 @@ function renderPays() {
   });
 }
 function openCheckout() {
-  if (!CART.length) { toast('Keranjang masih kosong'); return; }
-  if (SETTINGS.buka === false) { toast('Toko tutup (' + SETTINGS.jam_buka + '–' + SETTINGS.jam_tutup + ')'); return; }
+  if (!CART.length) { toast('Keranjang Anda masih kosong'); return; }
+  if (SETTINGS.buka === false) { toast('Mohon maaf, toko sedang tutup (' + SETTINGS.jam_buka + '–' + SETTINGS.jam_tutup + '). Silakan kembali pada jam operasional.'); return; }
   const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
-  $('coSum').innerHTML = `${CART.length} jenis item • Subtotal ${rp(sub)} + service ${rp(fee())} = <b>${rp(sub + fee())}</b>`;
+  $('coSum').innerHTML = `${CART.length} jenis menu • Subtotal ${rp(sub)} + biaya layanan ${rp(fee())} = <b>${rp(sub + fee())}</b>`;
   openM('mCheckout');
 }
 function openM(id) { $(id).classList.add('open'); }
@@ -185,9 +185,9 @@ async function buatPesanan() {
   const customer_name = $('nama').value.trim();
   const customer_phone = $('hp').value.trim();
   const note = $('catatan').value.trim();
-  if (!customer_name || !customer_phone) { toast('Isi nama dan HP terlebih dahulu'); return; }
+  if (!customer_name || !customer_phone) { toast('Mohon lengkapi nama dan nomor HP terlebih dahulu'); return; }
   if (!CART.length) return;
-  const btn = $('btnOrder'); btn.disabled = true; btn.textContent = 'Memproses...';
+  const btn = $('btnOrder'); btn.disabled = true; btn.textContent = 'Memproses pesanan...';
   try {
     const j = await apiPost({
       action: 'createOrder', customer_name, customer_phone, note,
@@ -195,23 +195,18 @@ async function buatPesanan() {
     });
     lastOrder = j.order;
     CART = []; saveCart(); closeM('mCheckout');
-    if (j.demo) toast('Mode demo — hubungkan GAS untuk menyimpan asli');
+    if (j.demo) toast('Mode pratinjau — hubungkan GAS untuk menyimpan pesanan asli');
     if (lastOrder.payment_method === 'CASH') showStruk(lastOrder);
     else showBayar(lastOrder);
   } catch (e) { toast(e.message); }
-  btn.disabled = false; btn.textContent = 'Buat Pesanan';
+  btn.disabled = false; btn.textContent = 'Konfirmasi Pesanan';
 }
 function qrFake(code) {
   let s = ''; const ch = '█▓▒░<>+*#$%&';
   for (let i = 0; i < 96; i++) s += ch[Math.floor(Math.random() * ch.length)] + (i % 12 === 11 ? '\n' : '');
   return `SIMULASI-${code}\n` + s;
 }
-function qrFake(code) {
-  let s = ''; const ch = '█▓▒░<>+*#$%&';
-  for (let i = 0; i < 96; i++) s += ch[Math.floor(Math.random() * ch.length)] + (i % 12 === 11 ? '\n' : '');
-  return `SIMULASI-${code}\n` + s;
-}
-// --- Simulasi semirip pembayaran asli: QR scan, nomor referensi, instruksi, countdown ---
+// --- Panduan pembayaran yang menyerupai aslinya: pindai QR, nomor referensi, instruksi, dan hitung mundur ---
 let payTimer = null;
 function stopPayTimer() { if (payTimer) { clearInterval(payTimer); payTimer = null; } }
 function payRef(code, method) {
@@ -224,15 +219,16 @@ function payRef(code, method) {
   return '0817 ' + d.slice(0, 4) + ' ' + d.slice(4);
 }
 const PAY_STEPS = {
-  QRIS: ['Buka m-banking atau e-wallet apa pun', 'Pilih Bayar atau Scan QR', 'Scan kode QR di atas', 'Pastikan nama UMKM MANDIRI dan nominal sesuai, lalu konfirmasi'],
-  GOPAY: ['Buka aplikasi GoPay', 'Pilih Bayar ke nomor tujuan di atas', 'Masukkan nominal persis seperti tagihan', 'Konfirmasi dengan PIN GoPay'],
-  OVO: ['Buka aplikasi OVO', 'Pilih Transfer ke nomor tujuan di atas', 'Masukkan nominal persis seperti tagihan', 'Konfirmasi dengan PIN OVO'],
+  QRIS: ['Buka aplikasi m-banking atau e-wallet pilihan Anda', 'Pilih menu Bayar atau Pindai QR', 'Pindai kode QR di atas', 'Pastikan nama UMKM MANDIRI dan nominal sudah sesuai, lalu konfirmasi'],
+  GOPAY: ['Buka aplikasi GoPay', 'Pilih Bayar ke nomor tujuan di atas', 'Masukkan nominal tepat sesuai tagihan', 'Konfirmasi dengan PIN GoPay Anda'],
+  OVO: ['Buka aplikasi OVO', 'Pilih Transfer ke nomor tujuan di atas', 'Masukkan nominal tepat sesuai tagihan', 'Konfirmasi dengan PIN OVO Anda'],
+  DANA: ['Buka aplikasi DANA', 'Pilih Kirim ke nomor tujuan di atas', 'Masukkan nominal tepat sesuai tagihan', 'Konfirmasi dengan PIN DANA Anda'],
   DANA: ['Buka aplikasi DANA', 'Pilih Kirim ke nomor tujuan di atas', 'Masukkan nominal persis seperti tagihan', 'Konfirmasi dengan PIN DANA'],
 };
 function showBayar(o) {
   stopPayTimer();
   const label = PAYMENTS[o.payment_method].label;
-  $('bTitle').textContent = `Bayar ${label} — ${rp(o.total)}`;
+  $('bTitle').textContent = `Pembayaran ${label} — ${rp(o.total)}`;
   const ref = payRef(o.code, o.payment_method);
   const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(storeSlug() + '|' + o.code + '|' + o.total);
   const steps = (PAY_STEPS[o.payment_method] || PAY_STEPS.QRIS).map((s, i) => `<div class="struk-row"><span>Langkah ${i + 1}</span><span>${s.split('UMKM MANDIRI').join(SETTINGS.store_name)}</span></div>`).join('');
@@ -240,19 +236,19 @@ function showBayar(o) {
   const batas = Date.now() + mnit * 60 * 1000;
   $('bBody').innerHTML = `
     <div class="struk-row"><span>Merchant</span><b>${SETTINGS.store_name}</b></div>
-    <div class="struk-row"><span>Kode pesanan</span><b>${o.code}</b></div>
-    <div class="struk-row"><span>Antrian</span><b>${o.queue_no}</b></div>
-    <div class="struk-row"><span>${o.payment_method === 'QRIS' ? 'NMID' : 'Nomor tujuan'}</span><b>${ref}</b></div>
-    <div class="struk-row"><span>Nominal</span><b>${rp(o.total)}</b></div>
-    <div class="struk-row"><span>Batas bayar</span><b id="payCount">${String(mnit).padStart(2, '0')}:00</b></div>
+    <div class="struk-row"><span>Kode Pesanan</span><b>${o.code}</b></div>
+    <div class="struk-row"><span>Nomor Antrean</span><b>${o.queue_no}</b></div>
+    <div class="struk-row"><span>${o.payment_method === 'QRIS' ? 'NMID' : 'Nomor Tujuan'}</span><b>${ref}</b></div>
+    <div class="struk-row"><span>Nominal Pembayaran</span><b>${rp(o.total)}</b></div>
+    <div class="struk-row"><span>Batas Pembayaran</span><b id="payCount">${String(mnit).padStart(2, '0')}:00</b></div>
     <div class="qrbox" style="margin-top:10px">
       <img class="qr-img" src="${qrUrl}" alt="Kode QR pembayaran" onerror="this.style.display='none';document.getElementById('qrFb').style.display='block'">
       <pre id="qrFb" style="display:none;text-align:left;font-size:10px">${qrFake(o.code)}</pre>
       <div style="font-size:16px;font-weight:800;margin-top:8px">${rp(o.total)}</div>
-      <small>Simulasi — tidak ada uang asli berpindah</small></div>
+      <small>Mode simulasi — tidak ada dana aktual yang berpindah</small></div>
     <div style="margin-top:10px">${steps}</div>
     <div class="row" style="margin-top:10px"><button class="btn ghost" onclick="stopPayTimer();closeM('mBayar')">Bayar Nanti</button>
-    <button id="btnPay" class="btn green" onclick="simPay('${o.code}')">Saya Sudah Bayar</button></div>`;
+    <button id="btnPay" class="btn green" onclick="simPay('${o.code}')">Saya Sudah Membayar</button></div>`;
   openM('mBayar');
   payTimer = setInterval(() => {
     const sisa = Math.max(0, Math.floor((batas - Date.now()) / 1000));
@@ -261,19 +257,19 @@ function showBayar(o) {
     if (sisa <= 0) {
       stopPayTimer();
       const b = $('btnPay');
-      if (b) { b.disabled = true; b.textContent = 'Kedaluarsa'; }
-      toast('Waktu bayar habis — silakan buat pesanan baru');
+      if (b) { b.disabled = true; b.textContent = 'Telah Kedaluwarsa'; }
+      toast('Waktu pembayaran telah berakhir — silakan buat pesanan baru');
     }
   }, 1000);
 }
 async function simPay(code) {
   const b = $('btnPay');
-  b.disabled = true; b.textContent = 'Memverifikasi...';
+  b.disabled = true; b.textContent = 'Memverifikasi pembayaran...';
   await new Promise((r) => setTimeout(r, 1800));
   try {
     const j = await apiPost({ action: 'payOrder', code });
-    stopPayTimer(); closeM('mBayar'); showStruk(j.order); toast('Pembayaran lunas');
-  } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Bayar'; toast(e.message); }
+    stopPayTimer(); closeM('mBayar'); showStruk(j.order); toast('Pembayaran berhasil dikonfirmasi. Terima kasih.');
+  } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Membayar'; toast(e.message); }
 }
 function showStruk(o) {
   const lunas = o.payment_status === 'paid';
@@ -281,27 +277,27 @@ function showStruk(o) {
   const tgl = o.created_at || new Date().toLocaleString('id-ID');
   $('sBody').innerHTML = `
     <div id="strukPrint" class="struk">
-      <div class="struk-head"><b>${SETTINGS.store_name}</b><span>Takeaway Tanpa Antri</span></div>
+      <div class="struk-head"><b>${SETTINGS.store_name}</b><span>Layanan Takeaway</span></div>
       <div class="struk-row"><span>No. Struk</span><b>${o.code}</b></div>
-      <div class="struk-row"><span>Antrian</span><b>${o.queue_no}</b></div>
+      <div class="struk-row"><span>No. Antrean</span><b>${o.queue_no}</b></div>
       <div class="struk-row"><span>Tanggal</span><span>${tgl}</span></div>
-      <div class="struk-row"><span>Pelanggan</span><span>${o.customer_name} (${o.customer_phone})</span></div>
+      <div class="struk-row"><span>Pemesan</span><span>${o.customer_name} (${o.customer_phone})</span></div>
       ${o.note ? `<div class="struk-row"><span>Catatan</span><span>${o.note}</span></div>` : ''}
       <div class="struk-div"></div>
-      <table>${o.items.map((i) => `<tr><td>${i.qty} x ${i.menu_name} <small class="muted">${i.level || ''}</small><br><small class="muted">${rp(i.price)} / pcs</small></td><td style="text-align:right;white-space:nowrap">${rp(i.price * i.qty)}</td></tr>`).join('')}
+      <table>${o.items.map((i) => `<tr><td>${i.qty} x ${i.menu_name} <small class="muted">${i.level || ''}</small><br><small class="muted">${rp(i.price)} / porsi</small></td><td style="text-align:right;white-space:nowrap">${rp(i.price * i.qty)}</td></tr>`).join('')}
       <tr><td>Subtotal</td><td style="text-align:right">${rp(o.subtotal)}</td></tr>
-      <tr><td>Service</td><td style="text-align:right">${rp(o.service_fee)}</td></tr>
-      <tr><td><b>Total</b></td><td style="text-align:right"><b>${rp(o.total)}</b></td></tr></table>
+      <tr><td>Biaya Layanan</td><td style="text-align:right">${rp(o.service_fee)}</td></tr>
+      <tr><td><b>Total Pembayaran</b></td><td style="text-align:right"><b>${rp(o.total)}</b></td></tr></table>
       <div class="struk-div"></div>
       <div class="struk-row"><span>Metode</span><b>${payLabel}</b></div>
-      <div class="struk-row"><span>Status bayar</span><span class="badge ${lunas ? 'paid' : 'pending'}">${lunas ? 'LUNAS' : (o.payment_method === 'CASH' ? 'BAYAR DI COUNTER' : 'MENUNGGU')}</span></div>
-      <div class="struk-row"><span>Estimasi siap</span><span>${SETTINGS.estimasi}</span></div>
+      <div class="struk-row"><span>Status Pembayaran</span><span class="badge ${lunas ? 'paid' : 'pending'}">${lunas ? 'LUNAS' : (o.payment_method === 'CASH' ? 'BAYAR DI COUNTER' : 'MENUNGGU PEMBAYARAN')}</span></div>
+      <div class="struk-row"><span>Estimasi Siap</span><span>${SETTINGS.estimasi}</span></div>
       <div class="qrbox" style="margin-top:12px"><div style="font-size:26px;font-weight:800;letter-spacing:2px">${o.code}</div>
-      <div>Tunjukkan kode ini ke counter</div></div>
-      <p class="muted" style="text-align:center">Terima kasih sudah memesan di ${SETTINGS.store_name}</p>
+      <div>Mohon tunjukkan kode ini di counter</div></div>
+      <p class="muted" style="text-align:center">Terima kasih telah memesan di ${SETTINGS.store_name}</p>
     </div>
-    <div class="row no-print" style="margin-top:12px"><button class="btn ghost" onclick="printStruk()">Cetak</button>
-    <button class="btn" onclick="lacakDariStruk()">Lacak Status</button></div>`;
+    <div class="row no-print" style="margin-top:12px"><button class="btn ghost" onclick="printStruk()">Cetak Struk</button>
+    <button class="btn" onclick="lacakDariStruk()">Lacak Pesanan</button></div>`;
   openM('mStruk');
 }
 function printStruk() {
@@ -310,12 +306,12 @@ function printStruk() {
   setTimeout(() => document.body.classList.remove('p-struk'), 500);
 }
 function lacakDariStruk() { closeM('mStruk'); $('kode').value = lastOrder.code; lacak(); $('lacak').scrollIntoView({ behavior: 'smooth' }); }
-const STATUS = { menunggu_pembayaran: 'Menunggu Bayar', dimasak: 'Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan', kedaluwarsa: 'Kedaluwarsa' };
+const STATUS = { menunggu_pembayaran: 'Menunggu Pembayaran', dimasak: 'Sedang Dimasak', siap_diambil: 'Siap Diambil', selesai: 'Selesai', dibatalkan: 'Dibatalkan', kedaluwarsa: 'Kedaluwarsa' };
 async function lacak() {
   const code = $('kode').value.trim().toUpperCase();
   const box = $('hasil');
-  if (!code) { toast('Isi kode terlebih dahulu, contoh GC-XXXXXX'); return; }
-  box.innerHTML = '<p class="muted">Mencari pesanan...</p>';
+  if (!code) { toast('Mohon masukkan kode pesanan terlebih dahulu, contoh GC-XXXXXX'); return; }
+  box.innerHTML = '<p class="muted">Mencari pesanan Anda...</p>';
   try {
     const j = await apiGet('order', { code });
     const o = j.order;
@@ -326,7 +322,7 @@ async function lacak() {
     }).join(' → ');
     box.innerHTML = `<div class="track-card">
       <div class="row" style="justify-content:space-between"><b style="font-size:18px">${o.code}</b>
-      <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${o.payment_status === 'paid' ? 'LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI COUNTER' : 'BELUM BAYAR'}</span></div>
+      <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${o.payment_status === 'paid' ? 'LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI COUNTER' : 'BELUM DIBAYAR'}</span></div>
       <div class="muted">${o.queue_no} • ${o.payment_method} • ${o.customer_name} • ${rp(o.total)}</div>
       <div class="timeline">${pills}</div>
       <small class="muted">${o.created_at}</small>

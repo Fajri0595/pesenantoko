@@ -2,50 +2,50 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>UMKM Mandiri — Takeaway Tanpa Antri</title>
-<meta name="description" content="UMKM Mandiri: pesan makanan dan minuman takeaway tanpa antri. Bayar QRIS/e-wallet, ambil dengan kode.">
+<title>UMKM Mandiri — Pesan Takeaway dengan Mudah</title>
+<meta name="description" content="UMKM Mandiri: layanan pesan takeaway makanan dan minuman secara online. Bayar dengan QRIS/e-wallet, ambil pesanan dengan kode antrian.">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <header class="top">
   <div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo UMKM Mandiri">
-    <div><div class="logo" id="brandName">UMKM MANDIRI</div><small id="brandTag">TAKEAWAY &nbsp;•&nbsp; TANPA ANTRI</small></div>
+    <div><div class="logo" id="brandName">UMKM MANDIRI</div><small id="brandTag">TAKEAWAY &nbsp;•&nbsp; PRAKTIS & TANPA ANTRE</small></div>
   </div>
-  <nav><a href="#menu">Menu</a><a href="#lacak">Lacak</a><a href="./admin.html">Admin</a></nav>
+  <nav><a href="#menu">Menu</a><a href="#lacak">Lacak Pesanan</a><a href="./admin.html">Admin</a></nav>
 </header>
 <div class="wrap">
   <div id="cfgWarn" class="warn" style="display:none">
-    <b>Backend belum dihubungkan.</b> Isi <code>GAS_API_URL</code> di <code>config.js</code>
-    dengan URL Web App GAS, lalu push ulang. Menu di bawah ini data demo.
+    <b>Layanan backend belum terhubung.</b> Mohon isi <code>GAS_API_URL</code> di <code>config.js</code>
+    dengan URL Web App GAS, kemudian publikasikan ulang. Menu di bawah ini merupakan data pratinjau.
   </div>
   <div id="tutupWarn" class="warn" style="display:none"></div>
 
   <section class="hero">
     <div>
-      <h1>Pesan dari HP, bayar digital, <em>tinggal ambil.</em></h1>
-      <p>Pilih mie dan dimsum favorit, bayar <b>QRIS / GoPay / OVO / DANA / Cash</b>, terima kode <b>GC-XXXX</b> dan nomor antrian, lalu ambil saat status <b>Siap Diambil</b>.</p>
+      <h1>Pesan dari Ponsel, Bayar Digital, <em>Tinggal Ambil.</em></h1>
+      <p>Pilih mie dan dimsum favorit Anda, selesaikan pembayaran melalui <b>QRIS / GoPay / OVO / DANA / Tunai</b>, terima kode <b>GC-XXXX</b> beserta nomor antrean, lalu ambil pesanan saat status <b>Siap Diambil</b>.</p>
       <div class="hero-cta">
-        <button class="btn-light" onclick="document.getElementById('menu').scrollIntoView()">Lihat Menu</button>
+        <button class="btn-light" onclick="document.getElementById('menu').scrollIntoView()">Jelajahi Menu</button>
         <button class="btn-outline" onclick="document.getElementById('lacak').scrollIntoView()">Lacak Pesanan</button>
       </div>
-      <div class="chips"><span class="chip">Tanpa antri kasir</span><span class="chip">QRIS dan e-wallet</span><span class="chip" id="estChip">Siap sekitar 15 menit</span></div>
+      <div class="chips"><span class="chip">Tanpa Antre di Kasir</span><span class="chip">QRIS & E-Wallet</span><span class="chip" id="estChip">Estimasi siap 15 menit</span></div>
     </div>
   </section>
 
   <div class="steps">
-    <div class="step"><span class="n">1</span><b>Pilih menu</b><span>Mie, dimsum, minuman dan level pedas.</span></div>
-    <div class="step"><span class="n">2</span><b>Checkout</b><span>Isi nama dan HP, pilih pembayaran.</span></div>
-    <div class="step"><span class="n">3</span><b>Bayar (simulasi)</b><span>QRIS/e-wallet, tekan Sudah Bayar.</span></div>
-    <div class="step"><span class="n">4</span><b>Ambil</b><span>Tunjukkan kode GC-XXXX ke counter.</span></div>
+    <div class="step"><span class="n">1</span><b>Pilih Menu</b><span>Mie, dimsum, minuman, dan level kepedasan.</span></div>
+    <div class="step"><span class="n">2</span><b>Checkout</b><span>Lengkapi nama, nomor HP, dan pembayaran.</span></div>
+    <div class="step"><span class="n">3</span><b>Pembayaran</b><span>QRIS/e-wallet, lalu konfirmasi Sudah Bayar.</span></div>
+    <div class="step"><span class="n">4</span><b>Pengambilan</b><span>Tunjukkan kode GC-XXXX di counter.</span></div>
   </div>
 
   <div class="shop">
     <div class="shop-main">
-      <div class="sec"><div><h2 id="menu">Jelajahi Menu</h2><p id="menuCount">Memuat...</p></div></div>
+      <div class="sec"><div><h2 id="menu">Jelajahi Menu</h2><p id="menuCount">Memuat pilihan menu...</p></div></div>
       <div class="toolbar">
-        <div class="search"><input id="q" type="text" placeholder="Cari mie level, siomay, es..." autocomplete="off"></div>
-        <select id="kategori" aria-label="Kategori"><option value="">Semua kategori</option></select>
+        <div class="search"><input id="q" type="text" placeholder="Cari mie level, siomay, atau minuman favorit..." autocomplete="off"></div>
+        <select id="kategori" aria-label="Kategori"><option value="">Semua Kategori</option></select>
       </div>
       <div id="pills" class="pills"></div>
       <div id="grid" class="grid">
@@ -54,52 +54,52 @@
     </div>
     <aside id="cartPanel" class="cart-panel" aria-label="Keranjang belanja">
       <div class="cart-head">
-        <div><b>Keranjang</b><p class="muted" id="cartSub" style="margin:2px 0 0">0 item</p></div>
+        <div><b>Keranjang Anda</b><p class="muted" id="cartSub" style="margin:2px 0 0">Belum ada menu dipilih</p></div>
         <span class="badge" id="cartBadge">Takeaway</span>
       </div>
       <div id="citems" class="cart-items"></div>
       <div class="cart-foot">
         <div class="total-row"><span>Subtotal</span><b id="csub">Rp0</b></div>
-        <div class="total-row muted"><span>Service</span><span id="svcLabel">Rp2.000</span></div>
-        <div class="total-row" style="font-size:18px"><span>Total</span><b id="ctotal">Rp0</b></div>
-        <button class="btn" style="width:100%;margin-top:10px;padding:14px" onclick="openCheckout()">Checkout</button>
+        <div class="total-row muted"><span>Biaya Layanan</span><span id="svcLabel">Rp2.000</span></div>
+        <div class="total-row" style="font-size:18px"><span>Total Pembayaran</span><b id="ctotal">Rp0</b></div>
+        <button class="btn" style="width:100%;margin-top:10px;padding:14px" onclick="openCheckout()">Lanjut ke Checkout</button>
       </div>
     </aside>
   </div>
 
-  <div class="sec"><div><h2 id="lacak">Lacak Pesanan</h2><p>Masukkan kode dari struk (contoh GC-AB12CD).</p></div></div>
+  <div class="sec"><div><h2 id="lacak">Lacak Pesanan</h2><p>Masukkan kode pada struk Anda (contoh GC-AB12CD).</p></div></div>
   <div class="track-form">
     <input id="kode" type="text" placeholder="GC-XXXXXX" style="text-transform:uppercase">
-    <button class="btn" onclick="lacak()">Cari Status</button>
+    <button class="btn" onclick="lacak()">Lacak Sekarang</button>
   </div>
   <div id="hasil"></div>
 
-  <footer class="site"><span id="footBrand">UMKM Mandiri</span> • Frontend GitHub Pages • Backend GAS dan Spreadsheet • QRIS/e-wallet <b>simulasi</b>, Cash di counter
-    <div class="pay-row"><span>QRIS</span><span>GoPay</span><span>OVO</span><span>DANA</span><span>Cash</span></div>
+  <footer class="site"><span id="footBrand">UMKM Mandiri</span> • Pesan Online, Ambil di Counter • Mendukung QRIS, E-Wallet, dan Tunai
+    <div class="pay-row"><span>QRIS</span><span>GoPay</span><span>OVO</span><span>DANA</span><span>Tunai</span></div>
   </footer>
 </div>
 
-<button id="fab" class="cart-fab" onclick="toggleCart(true)">Keranjang • <span id="cnt">0</span> • <span id="fabTotal">Rp0</span></button>
+<button id="fab" class="cart-fab" onclick="toggleCart(true)">Lihat Keranjang • <span id="cnt">0</span> • <span id="fabTotal">Rp0</span></button>
 <div id="toast"></div>
 
 <div id="mCheckout" class="modal"><div class="box">
-  <h2>Checkout Takeaway</h2><div class="muted">Langkah 1 dari 2 — data pengambil dan pembayaran</div>
-  <label>Nama pengambil</label><input id="nama" type="text" placeholder="Nama pengambil" autocomplete="name">
-  <label>No. HP / WA</label><input id="hp" type="tel" placeholder="08xx xxxx xxxx" autocomplete="tel">
-  <label>Catatan (opsional)</label><input id="catatan" type="text" placeholder="Es sedikit, mie setengah matang...">
-  <label>Metode pembayaran (simulasi)</label><div id="pays"></div>
+  <h2>Checkout Takeaway</h2><div class="muted">Langkah 1 dari 2 — Data pengambilan dan pembayaran</div>
+  <label>Nama Pemesan</label><input id="nama" type="text" placeholder="Nama lengkap pemesan" autocomplete="name">
+  <label>No. HP / WhatsApp</label><input id="hp" type="tel" placeholder="08xx xxxx xxxx" autocomplete="tel">
+  <label>Catatan Pesanan (Opsional)</label><input id="catatan" type="text" placeholder="Contoh: es sedikit, mie setengah matang...">
+  <label>Metode Pembayaran</label><div id="pays"></div>
   <div id="coSum" style="margin:12px 0;font-size:14px"></div>
-  <div class="row"><button class="btn ghost" onclick="closeM('mCheckout')">Batal</button>
-  <button id="btnOrder" class="btn" onclick="buatPesanan()">Buat Pesanan</button></div>
+  <div class="row"><button class="btn ghost" onclick="closeM('mCheckout')">Batalkan</button>
+  <button id="btnOrder" class="btn" onclick="buatPesanan()">Konfirmasi Pesanan</button></div>
 </div></div>
 
 <div id="mBayar" class="modal"><div class="box">
-  <h2 id="bTitle">Pembayaran</h2><div class="muted">Langkah 2 dari 2 — simulasi, tidak ada uang asli</div>
+  <h2 id="bTitle">Pembayaran</h2><div class="muted">Langkah 2 dari 2 — Selesaikan pembayaran Anda</div>
   <div id="bBody" style="margin-top:8px"></div>
 </div></div>
 
 <div id="mStruk" class="modal"><div class="box" style="text-align:left">
-  <h2>Pesanan dibuat</h2>
+  <h2>Pesanan Berhasil Dibuat</h2>
   <div id="sBody"></div>
   <div class="row" style="margin-top:12px"><button class="btn ghost" onclick="closeM('mStruk')">Tutup</button>
   <button class="btn" onclick="lacakDariStruk()">Lacak Status</button></div>

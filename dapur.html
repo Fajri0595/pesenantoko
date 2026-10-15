@@ -18,20 +18,20 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo"><div><div class="logo" id="dapurBrand">UMKM MANDIRI</div><small>DAPUR DAN ANTRIAN</small></div></div>
-<nav><span id="dClock">--:--</span><a href="./admin.html">Admin</a><button id="btnSound" onclick="aktifkanSuara()">Aktifkan Suara</button><button id="btnOut" style="display:none" onclick="keluar()">Keluar</button></nav></header>
+<header class="top"><div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo"><div><div class="logo" id="dapurBrand">UMKM MANDIRI</div><small>DAPUR & ANTREAN</small></div></div>
+<nav><span id="dClock">--:--</span><a href="./admin.html">Panel Admin</a><button id="btnSound" onclick="aktifkanSuara()">Aktifkan Notifikasi Suara</button><button id="btnOut" style="display:none" onclick="keluar()">Keluar</button></nav></header>
 <div class="wrap">
   <div id="dLogin" class="box login-card">
-    <h2>Hubungkan Layar Dapur</h2><p class="muted">Login sekali dengan akun admin. Token tersimpan di perangkat ini.</p>
-    <label>Username</label><input id="du" type="text" value="admin" autocomplete="username">
-    <label>Password</label><input id="dp" type="password" autocomplete="current-password">
-    <button class="btn" style="margin-top:14px;width:100%;padding:13px" onclick="pair()">Hubungkan</button>
+    <h2>Tautkan Layar Dapur</h2><p class="muted">Masuk sekali dengan akun admin. Perangkat ini akan tetap terhubung otomatis.</p>
+    <label>Nama Pengguna</label><input id="du" type="text" value="admin" autocomplete="username">
+    <label>Kata Sandi</label><input id="dp" type="password" autocomplete="current-password">
+    <button class="btn" style="margin-top:14px;width:100%;padding:13px" onclick="pair()">Tautkan Sekarang</button>
     <p id="dmsg" style="color:#8f6b1d;font-size:13px"></p>
   </div>
   <div id="dMain" style="display:none">
-    <div class="sec"><div><h2>Antrian Aktif</h2><p id="dCount" class="muted">Memuat...</p></div></div>
+    <div class="sec"><div><h2>Antrean Pesanan Aktif</h2><p id="dCount" class="muted">Memuat data antrean...</p></div></div>
     <div class="dapur-grid">
-      <div class="dapur-col"><h2>Dimasak</h2><div id="dMasak"></div></div>
+      <div class="dapur-col"><h2>Sedang Dimasak</h2><div id="dMasak"></div></div>
       <div class="dapur-col"><h2>Siap Diambil</h2><div id="dSiap"></div></div>
     </div>
   </div>

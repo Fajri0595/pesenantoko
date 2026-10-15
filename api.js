@@ -28,11 +28,11 @@ async function apiPost(body) {
 // ---------- Mode demo (sebelum GAS_API_URL diisi) ----------
 // Agar GitHub Pages tetap tampil cantik sebelum backend dihubungkan.
 const DEMO_PAYMENTS = {
-  QRIS: { label: 'QRIS', desc: 'Scan QR dari m-banking / e-wallet apa pun' },
-  GOPAY: { label: 'GoPay', desc: 'Bayar via GoPay (simulasi)' },
-  OVO: { label: 'OVO', desc: 'Bayar via OVO (simulasi)' },
-  DANA: { label: 'DANA', desc: 'Bayar via DANA (simulasi)' },
-  CASH: { label: 'Cash di Counter', desc: 'Pesan dulu, bayar tunai saat ambil' },
+  QRIS: { label: 'QRIS', desc: 'Pindai QR dari m-banking / e-wallet pilihan Anda' },
+  GOPAY: { label: 'GoPay', desc: 'Pembayaran praktis via GoPay' },
+  OVO: { label: 'OVO', desc: 'Pembayaran praktis via OVO' },
+  DANA: { label: 'DANA', desc: 'Pembayaran praktis via DANA' },
+  CASH: { label: 'Tunai di Counter', desc: 'Pesan sekarang, bayar tunai saat pengambilan' },
 };
 const DEMO_MENU = [
   { id: 1, name: 'Mie Level 1', category: 'Mie', price: 11000, description: 'Manis gurih, level 1 pemula.', emoji: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=800&auto=format&fit=crop', is_available: 1 },
@@ -47,7 +47,7 @@ function demoGet(action, params) {
   params = params || {};
   if (action === 'payments') return Promise.resolve(DEMO_PAYMENTS);
   if (action === 'settings') return Promise.resolve({
-    store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • TANPA ANTRI',
+    store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • PRAKTIS & TANPA ANTRE',
     service_fee: 2000, estimasi: '15–20 menit', payments: DEMO_PAYMENTS,
   });
   if (action === 'kategori') return Promise.resolve(['Dimsum', 'Mie', 'Minuman']);
@@ -57,8 +57,8 @@ function demoGet(action, params) {
     if (params.q) list = list.filter(function (m) { return m.name.toLowerCase().indexOf(String(params.q).toLowerCase()) > -1; });
     return Promise.resolve(list);
   }
-  if (action === 'order') return Promise.reject(new Error('Mode demo: hubungkan GAS_API_URL dulu untuk lacak pesanan asli.'));
-  return Promise.reject(new Error('Mode demo: isi GAS_API_URL di config.js untuk akses admin.'));
+  if (action === 'order') return Promise.reject(new Error('Mode pratinjau: hubungkan GAS_API_URL terlebih dahulu untuk melacak pesanan asli.'));
+  return Promise.reject(new Error('Mode pratinjau: mohon isi GAS_API_URL di config.js untuk mengakses layanan admin.'));
 }
 function demoPost(body) {
   if (body.action === 'createOrder') {
@@ -81,7 +81,7 @@ function demoPost(body) {
     };
     return Promise.resolve({ order: order, demo: true });
   }
-  if (body.action === 'payOrder') return Promise.reject(new Error('Mode demo: isi GAS_API_URL dulu untuk simulasi bayar.'));
-  if (body.action === 'adminUpdateSettings') return Promise.reject(new Error('Mode demo: isi GAS_API_URL dulu untuk menyimpan pengaturan.'));
-  return Promise.reject(new Error('Mode demo: isi GAS_API_URL di config.js'));
+  if (body.action === 'payOrder') return Promise.reject(new Error('Mode pratinjau: hubungkan GAS_API_URL terlebih dahulu untuk simulasi pembayaran.'));
+  if (body.action === 'adminUpdateSettings') return Promise.reject(new Error('Mode pratinjau: hubungkan GAS_API_URL terlebih dahulu untuk menyimpan pengaturan.'));
+  return Promise.reject(new Error('Mode pratinjau: mohon isi GAS_API_URL di config.js'));
 }

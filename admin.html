@@ -7,17 +7,17 @@
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<header class="top"><div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo UMKM Mandiri"><div><div class="logo">UMKM MANDIRI</div><small>ADMIN</small></div></div>
-<nav><a href="./index.html">Publik</a><a href="./dapur.html">Dapur</a><button id="btnOut" style="display:none" onclick="logout()">Logout</button></nav></header>
+<header class="top"><div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo UMKM Mandiri"><div><div class="logo">UMKM MANDIRI</div><small>PANEL ADMIN</small></div></div>
+<nav><a href="./index.html">Halaman Publik</a><a href="./dapur.html">Layar Dapur</a><button id="btnOut" style="display:none" onclick="logout()">Keluar</button></nav></header>
 <div class="wrap">
-  <div id="cfgWarn" class="warn" style="display:none">Isi <code>GAS_API_URL</code> di <code>config.js</code> agar admin terhubung ke GAS.</div>
+  <div id="cfgWarn" class="warn" style="display:none">Mohon lengkapi <code>GAS_API_URL</code> di <code>config.js</code> agar panel admin terhubung ke layanan GAS.</div>
   <div id="login" class="box login-card">
-    <h2>Login Admin</h2><p class="muted">Kelola katalog dan pesanan takeaway.</p>
-    <label>Username</label><input id="u" type="text" value="admin" autocomplete="username">
-    <label>Password</label><input id="p" type="password" value="admin123" autocomplete="current-password">
-    <button class="btn" style="margin-top:14px;width:100%;padding:13px" onclick="login()">Masuk Dashboard</button>
+    <h2>Selamat Datang Kembali</h2><p class="muted">Kelola katalog menu dan pesanan takeaway dengan mudah.</p>
+    <label>Nama Pengguna</label><input id="u" type="text" value="admin" autocomplete="username">
+    <label>Kata Sandi</label><input id="p" type="password" value="admin123" autocomplete="current-password">
+    <button class="btn" style="margin-top:14px;width:100%;padding:13px" onclick="login()">Masuk ke Dashboard</button>
     <p id="msg" style="color:#8f6b1d;font-size:13px"></p>
-    <p class="muted">Default: <b>admin / admin123</b> (sesuai Code.gs)</p>
+    <p class="muted">Kredensial bawaan: <b>admin / admin123</b> (dapat diubah melalui Code.gs)</p>
   </div>
   <div id="main" style="display:none">
     <div class="sec"><div><h2>Dashboard</h2><p>Ringkasan operasional hari ini.</p></div></div>
@@ -25,13 +25,13 @@
     <div class="tabs">
       <button class="btn sm" onclick="tab('orders')">Pesanan</button>
       <button class="btn sm ghost" onclick="tab('menu')">Katalog Menu</button>
-      <button class="btn sm ghost" onclick="tab('laporan')">Laporan</button>
-      <button class="btn sm ghost" onclick="tab('setting')">Pengaturan</button>
+      <button class="btn sm ghost" onclick="tab('laporan')">Laporan Penjualan</button>
+      <button class="btn sm ghost" onclick="tab('setting')">Pengaturan Toko</button>
       <select id="fstat" onchange="loadOrders()" style="margin-left:auto;max-width:220px" aria-label="Filter status">
-        <option value="">Semua status</option>
-        <option value="menunggu_pembayaran">Menunggu bayar</option>
-        <option value="dimasak">Dimasak</option>
-        <option value="siap_diambil">Siap diambil</option>
+        <option value="">Semua Status</option>
+        <option value="menunggu_pembayaran">Menunggu Pembayaran</option>
+        <option value="dimasak">Sedang Dimasak</option>
+        <option value="siap_diambil">Siap Diambil</option>
         <option value="selesai">Selesai</option>
         <option value="dibatalkan">Dibatalkan</option>
         <option value="kedaluwarsa">Kedaluwarsa</option>
@@ -39,65 +39,65 @@
     </div>
     <div id="vOrders"></div>
     <div id="vMenu" style="display:none">
-      <div class="sec"><div><h2>Katalog Menu</h2><p>Tambah, edit, atau nonaktifkan menu. Kolom foto menerima URL gambar langsung.</p></div></div>
+      <div class="sec"><div><h2>Katalog Menu</h2><p>Tambah, ubah, atau nonaktifkan menu dengan mudah. Kolom foto mendukung URL gambar langsung.</p></div></div>
       <div class="box">
         <input id="mid" type="hidden">
         <div class="row">
-          <div style="flex:2;min-width:180px"><label>Nama</label><input id="mname" type="text" placeholder="Mie Level 4"></div>
-          <div style="flex:1;min-width:140px"><label>Kategori</label><input id="mcat" type="text" placeholder="Mie/Dimsum/Minuman"></div>
+          <div style="flex:2;min-width:180px"><label>Nama Menu</label><input id="mname" type="text" placeholder="Contoh: Mie Level 4"></div>
+          <div style="flex:1;min-width:140px"><label>Kategori</label><input id="mcat" type="text" placeholder="Mie / Dimsum / Minuman"></div>
         </div>
         <div class="row">
           <div style="flex:1"><label>Harga (Rp)</label><input id="mprice" type="number" value="11000" min="0"></div>
-          <div style="flex:1"><label>Stok (-1 = tanpa batas)</label><input id="mstok" type="number" value="-1"></div>
-          <div style="flex:1"><label>Tersedia?</label><select id="mavail"><option value="1">Ya</option><option value="0">Tidak</option></select></div>
+          <div style="flex:1"><label>Stok (-1 = Tanpa Batas)</label><input id="mstok" type="number" value="-1"></div>
+          <div style="flex:1"><label>Ketersediaan</label><select id="mavail"><option value="1">Tersedia</option><option value="0">Nonaktif</option></select></div>
         </div>
-        <label>Foto (URL langsung, opsional)</label><input id="memoji" type="url" placeholder="https://... — kosongkan untuk foto otomatis">
-        <label>Deskripsi</label><input id="mdesc" type="text" placeholder="Deskripsi singkat...">
-        <div class="row" style="margin-top:10px"><button class="btn" onclick="saveMenu()">Simpan</button>
-        <button class="btn ghost" onclick="resetForm()">Reset</button></div>
+        <label>Foto (URL Langsung, Opsional)</label><input id="memoji" type="url" placeholder="https://... — kosongkan untuk menggunakan foto otomatis">
+        <label>Deskripsi Singkat</label><input id="mdesc" type="text" placeholder="Tulis deskripsi singkat yang menggugah selera...">
+        <div class="row" style="margin-top:10px"><button class="btn" onclick="saveMenu()">Simpan Menu</button>
+        <button class="btn ghost" onclick="resetForm()">Atur Ulang</button></div>
       </div>
       <div id="mlist" style="margin-top:12px"></div>
     </div>
     <div id="vLaporan" style="display:none">
-      <div class="sec"><div><h2>Laporan Penjualan</h2><p>Rekap harian, mingguan (7 hari), dan bulanan.</p></div></div>
+      <div class="sec"><div><h2>Laporan Penjualan</h2><p>Rekapitulasi penjualan harian, mingguan (7 hari terakhir), dan bulanan.</p></div></div>
       <div class="row no-print">
         <select id="fperiode" onchange="loadLaporan()" style="max-width:220px" aria-label="Periode">
           <option value="harian">Harian</option>
           <option value="mingguan">Mingguan</option>
           <option value="bulanan">Bulanan</option>
         </select>
-        <button class="btn sm" onclick="loadLaporan()">Tampilkan</button>
-        <button class="btn sm ghost" onclick="printLaporan()">Cetak</button>
+        <button class="btn sm" onclick="loadLaporan()">Tampilkan Laporan</button>
+        <button class="btn sm ghost" onclick="printLaporan()">Cetak Laporan</button>
       </div>
       <div class="stat-grid" id="lapSum"></div>
       <div id="lapTable" style="margin-top:12px"></div>
     </div>
     <div id="vSetting" style="display:none">
-      <div class="sec"><div><h2>Pengaturan Toko</h2><p>Ubah nama, biaya, estimasi, dan metode bayar tanpa edit source code.</p></div></div>
+      <div class="sec"><div><h2>Pengaturan Toko</h2><p>Sesuaikan identitas toko, biaya, estimasi, dan metode pembayaran tanpa mengubah kode.</p></div></div>
       <div class="box">
         <div class="row">
-          <div style="flex:1;min-width:180px"><label>Nama toko</label><input id="sname" type="text"></div>
-          <div style="flex:1;min-width:180px"><label>Tagline</label><input id="stag" type="text"></div>
+          <div style="flex:1;min-width:180px"><label>Nama Toko</label><input id="sname" type="text"></div>
+          <div style="flex:1;min-width:180px"><label>Slogan</label><input id="stag" type="text"></div>
         </div>
         <div class="row">
-          <div style="flex:1"><label>Biaya service (Rp)</label><input id="sfee" type="number" min="0"></div>
-          <div style="flex:1"><label>Estimasi siap</label><input id="sest" type="text" placeholder="15–20 menit"></div>
+          <div style="flex:1"><label>Biaya Layanan (Rp)</label><input id="sfee" type="number" min="0"></div>
+          <div style="flex:1"><label>Estimasi Penyajian</label><input id="sest" type="text" placeholder="15–20 menit"></div>
         </div>
         <div class="row">
-          <div style="flex:1"><label>Jam buka (JJ:MM)</label><input id="sbuka" type="text" placeholder="08:00"></div>
-          <div style="flex:1"><label>Jam tutup (JJ:MM)</label><input id="stup" type="text" placeholder="21:00"></div>
-          <div style="flex:1"><label>Batas bayar (menit)</label><input id="sbatas" type="number" min="1" max="1440"></div>
+          <div style="flex:1"><label>Jam Buka (JJ:MM)</label><input id="sbuka" type="text" placeholder="08:00"></div>
+          <div style="flex:1"><label>Jam Tutup (JJ:MM)</label><input id="stup" type="text" placeholder="21:00"></div>
+          <div style="flex:1"><label>Batas Pembayaran (Menit)</label><input id="sbatas" type="number" min="1" max="1440"></div>
         </div>
-        <h3 style="margin:16px 0 4px">Metode pembayaran</h3>
-        <p class="muted">Centang untuk mengaktifkan. Minimal 1 harus aktif.</p>
+        <h3 style="margin:16px 0 4px">Metode Pembayaran</h3>
+        <p class="muted">Centang untuk mengaktifkan metode. Minimal satu metode harus tetap aktif.</p>
         <div id="spays"></div>
         <h3 style="margin:16px 0 4px">Notifikasi WhatsApp</h3>
-        <p class="muted">Via Fonnte. Pesanan baru dan pelunasan terkirim otomatis ke nomor admin.</p>
+        <p class="muted">Melalui Fonnte. Pesanan baru dan konfirmasi pelunasan akan dikirim otomatis ke nomor admin.</p>
         <div class="row">
-          <div style="flex:1"><label>Status</label><select id="swa_on"><option value="0">Mati</option><option value="1">Aktif</option></select></div>
-          <div style="flex:2;min-width:180px"><label>Nomor admin (08xx)</label><input id="swa_admin" type="tel" placeholder="0812xxxxxxx"></div>
+          <div style="flex:1"><label>Status Layanan</label><select id="swa_on"><option value="0">Nonaktif</option><option value="1">Aktif</option></select></div>
+          <div style="flex:2;min-width:180px"><label>Nomor Admin (08xx)</label><input id="swa_admin" type="tel" placeholder="0812xxxxxxx"></div>
         </div>
-        <label>Token Fonnte</label><input id="swa_token" type="text" placeholder="Token dari fonnte.com" autocomplete="off">
+        <label>Token Fonnte</label><input id="swa_token" type="text" placeholder="Token resmi dari fonnte.com" autocomplete="off">
         <div class="row" style="margin-top:12px"><button class="btn" onclick="saveSettings()">Simpan Pengaturan</button></div>
         <p id="smsg" class="muted"></p>
       </div>
