@@ -201,9 +201,39 @@ footer.site .pay-row span{background:#fff;border:1px solid var(--line);border-ra
   body.p-laporan #vOrders,body.p-laporan #vMenu,body.p-laporan #vSetting,
   body.p-laporan .no-print{display:none !important}
   body.p-laporan .box{box-shadow:none}
+  /* Thermal 58mm: struk ramping */
+  body.p-struk .struk{border:0;border-radius:0;padding:0;font-size:12px}
+  body.p-struk .modal .box{border:0;border-radius:0;padding:8px;max-width:58mm}
 }
 @media(max-width:640px){
   .hero{padding:24px 20px}
   .cart-fab{left:14px;right:14px;text-align:center}
   #toast{bottom:110px;width:max-content;max-width:92vw}
 }
+/* Elegan tambahan: drawer cart mobile, flag pedas, fokus aksesibel */
+.thumb{position:relative}
+.flag{position:absolute;left:10px;top:10px;background:#2e2a23;color:#ffd98a;font-size:11px;font-weight:800;letter-spacing:.8px;padding:5px 10px;border-radius:999px;text-transform:uppercase}
+.avail{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:10px 14px;font-size:13.5px;font-weight:700;color:#6b6257;cursor:pointer;white-space:nowrap}
+.pill-btn.sm{padding:6px 12px;font-size:12.5px}
+.cart-close{display:none}
+.cart-ov{position:fixed;inset:0;background:rgba(46,42,35,.5);opacity:0;transition:.25s;z-index:40}
+.cart-ov.show{opacity:1}
+body.lock{overflow:hidden}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media(max-width:1023px){
+  .cart-panel{position:fixed;right:0;top:0;bottom:0;width:min(420px,94vw);z-index:41;border-radius:20px 0 0 20px;transform:translateX(105%);transition:transform .28s ease;display:flex;flex-direction:column}
+  .cart-panel.open-drawer{transform:none}
+  .cart-panel .cart-items{flex:1;overflow:auto;max-height:none}
+  .cart-close{display:inline-block}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}html{scroll-behavior:auto}}
+/* SLA dapur */
+.antri-card.over{border-color:#b97900;box-shadow:0 0 0 3px rgba(185,121,0,.18)}
+.antri-card.late{border-color:#8f3a2a;box-shadow:0 0 0 3px rgba(143,58,42,.18)}
+.sla{font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:#efe8d8;color:#6f675c}
+.sla.warn{background:#f7ecd0;color:#8f6b1d}
+.sla.bad{background:#f6dcd4;color:#8f3a2a}
+/* TV mode dapur */
+body.tv .wrap{max-width:1400px}
+body.tv .antri-no{font-size:44px}
+body.tv .antri-card{padding:20px}

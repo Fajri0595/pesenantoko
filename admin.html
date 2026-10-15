@@ -13,11 +13,11 @@
   <div id="cfgWarn" class="warn" style="display:none">Mohon lengkapi <code>GAS_API_URL</code> di <code>config.js</code> agar panel admin terhubung ke layanan GAS.</div>
   <div id="login" class="box login-card">
     <h2>Selamat Datang Kembali</h2><p class="muted">Kelola katalog menu dan pesanan takeaway dengan mudah.</p>
-    <label>Nama Pengguna</label><input id="u" type="text" value="admin" autocomplete="username">
-    <label>Kata Sandi</label><input id="p" type="password" value="admin123" autocomplete="current-password">
+    <label>Nama Pengguna</label><input id="u" type="text" placeholder="Nama pengguna admin" autocomplete="username">
+    <label>Kata Sandi</label><input id="p" type="password" placeholder="Kata sandi" autocomplete="current-password">
     <button class="btn" style="margin-top:14px;width:100%;padding:13px" onclick="login()">Masuk ke Dashboard</button>
     <p id="msg" style="color:#8f6b1d;font-size:13px"></p>
-    <p class="muted">Kredensial bawaan: <b>admin / admin123</b> (dapat diubah melalui Code.gs)</p>
+    <p class="muted">Gunakan kredensial dari Script Properties (<b>ADMIN_USER</b> / <b>ADMIN_PASS</b>).</p>
   </div>
   <div id="main" style="display:none">
     <div class="sec"><div><h2>Dashboard</h2><p>Ringkasan operasional hari ini.</p></div></div>
@@ -36,6 +36,8 @@
         <option value="dibatalkan">Dibatalkan</option>
         <option value="kedaluwarsa">Kedaluwarsa</option>
       </select>
+      <input id="fq" type="text" placeholder="Cari kode / nama / HP..." style="max-width:220px" oninput="loadOrdersDebounced()">
+      <button class="btn sm ghost" onclick="exportOrdersCSV()">Export CSV</button>
     </div>
     <div id="vOrders"></div>
     <div id="vMenu" style="display:none">

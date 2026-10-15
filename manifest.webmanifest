@@ -1,0 +1,13 @@
+{
+  "name": "UMKM Mandiri — Takeaway",
+  "short_name": "UMKM Mandiri",
+  "description": "Pesan dari ponsel, bayar digital, tinggal ambil.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f3ec",
+  "theme_color": "#2a4c37",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
