@@ -22,9 +22,9 @@ header.top{position:sticky;top:0;z-index:20;background:rgba(255,253,249,.94);bac
 .brand .logo{font-weight:800;font-size:18px;letter-spacing:.6px;color:var(--brand-d)}
 .logo-img{width:42px;height:42px;border-radius:14px;display:block;box-shadow:0 4px 12px rgba(42,76,55,.25)}
 .brand small{display:block;font-size:10.5px;font-weight:700;color:var(--gold);letter-spacing:2px}
-header.top nav{margin-left:auto;display:flex;gap:8px}
+header.top nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 header.top nav a,header.top nav button{color:var(--brand-d);text-decoration:none;background:var(--brand-soft);border:1px solid transparent;
-  padding:9px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:700;transition:.2s}
+  padding:9px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:700;transition:.2s;white-space:nowrap}
 header.top nav a:hover,header.top nav button:hover{border-color:var(--brand);background:#fff}
 
 .wrap{max-width:1120px;margin:0 auto;padding:18px 16px 60px}
@@ -209,6 +209,19 @@ footer.site .pay-row span{background:#fff;border:1px solid var(--line);border-ra
   .hero{padding:24px 20px}
   .cart-fab{left:14px;right:14px;text-align:center}
   #toast{bottom:110px;width:max-content;max-width:92vw}
+  /* Header ramping di HP: nav turun ke baris sendiri */
+  header.top{padding:10px 12px}
+  .brand .logo{font-size:15px}
+  .logo-img{width:34px;height:34px;border-radius:11px}
+  .brand small{font-size:9px;letter-spacing:1.4px}
+  header.top nav{margin-left:0;width:100%;justify-content:flex-start}
+  header.top nav a,header.top nav button{padding:7px 12px;font-size:12.5px}
+  #dClock{display:none}
+  .sec h2{font-size:19px}
+  .dapur-col h2{font-size:17px}
+  .antri-no{font-size:26px}
+  .antri-card .row .btn{flex:1;text-align:center}
+  .toolbar select,.avail{flex:1}
 }
 /* Elegan tambahan: drawer cart mobile, flag pedas, fokus aksesibel */
 .thumb{position:relative}
@@ -227,6 +240,25 @@ body.lock{overflow:hidden}
   .cart-close{display:inline-block}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}html{scroll-behavior:auto}}
+/* Dokumen laporan penjualan formal */
+.lap-doc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;margin-top:6px;box-shadow:var(--shadow);color:#1f1c17}
+.lap-kop{text-align:center;margin-bottom:12px;border-bottom:2px solid var(--brand-d);padding-bottom:12px}
+.lap-kop b{display:block;font-size:20px;letter-spacing:1px;color:var(--brand-d)}
+.lap-kop span{display:block;font-size:14px;font-weight:800;margin-top:4px}
+.lap-kop small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.lap-doc h4{margin:18px 0 6px;font-size:15px;color:var(--brand-d)}
+.lap-tbl{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.lap-tbl th,.lap-tbl td{border:1px solid #d8cfb8;padding:7px 8px;text-align:left;vertical-align:top}
+.lap-tbl th{background:#f4ecda;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+.lap-tbl td.num,.lap-tbl th.num{text-align:right;white-space:nowrap}
+.lap-sign{display:flex;justify-content:space-between;gap:16px;margin-top:28px;font-size:13px;text-align:center}
+@media print{
+  body.p-laporan #vLaporan .sec,body.p-laporan #lapSum,body.p-laporan #lapTable,body.p-laporan .no-print{display:none !important}
+  body.p-laporan .wrap{max-width:none;padding:0}
+  body.p-laporan #lapDoc{margin:0}
+  .lap-doc{box-shadow:none;border:0;border-radius:0;margin:0}
+  .lap-tbl{font-size:12px}
+}
 /* SLA dapur */
 .antri-card.over{border-color:#b97900;box-shadow:0 0 0 3px rgba(185,121,0,.18)}
 .antri-card.late{border-color:#8f3a2a;box-shadow:0 0 0 3px rgba(143,58,42,.18)}

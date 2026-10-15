@@ -2,7 +2,7 @@
 const rp = (n) => 'Rp' + (n || 0).toLocaleString('id-ID');
 const token = () => localStorage.getItem('admin_token') || '';
 const escD = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-let kenal = {}, suara = false, ctxSuara = null, pollTimer = null, DAPUR_CACHE = [];
+let kenal = {}, suara = false, ctxSuara = null, pollTimer = null, DAPUR_CACHE = [], gagalBeruntun = 0;
 
 async function pair() {
   const username = document.getElementById('du').value, password = document.getElementById('dp').value;
@@ -59,10 +59,19 @@ function elapsed(dibuat) {
   return m < 60 ? m + ' mnt' : Math.floor(m / 60) + ' jam ' + (m % 60) + ' mnt';
 }
 function slaClass(mnt) { return mnt >= 30 ? 'bad' : (mnt >= 15 ? 'warn' : ''); }
+let cariT = null;
+function cariDapur() { clearTimeout(cariT); cariT = setTimeout(() => poll(true), 400); }
 async function poll(manual) {
   if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+  const t0 = Date.now();
+  const loadingTick = manual ? null : setInterval(() => {
+    const el = document.getElementById('dCount');
+    if (el && !DAPUR_CACHE.length && /^Memuat/.test(el.textContent || '')) el.textContent = 'Memuat data antrean... (' + Math.floor((Date.now() - t0) / 1000) + ' dtk)';
+  }, 1000);
   try {
     const rows = await apiGet('adminOrders', { token: token() });
+    if (loadingTick) clearInterval(loadingTick);
+    gagalBeruntun = 0;
     DAPUR_CACHE = rows;
     const q = ((document.getElementById('dq') && document.getElementById('dq').value) || '').toLowerCase();
     let masak = rows.filter((o) => o.status === 'dimasak');
@@ -84,11 +93,32 @@ async function poll(manual) {
     gambar(document.getElementById('dMasak'), masak, false);
     gambar(document.getElementById('dSiap'), siap, true);
   } catch (e) {
-    document.getElementById('dCount').textContent = 'Data belum dapat dimuat: ' + e.message;
+    if (loadingTick) clearInterval(loadingTick);
+    const msg = String((e && e.message) || e);
+    // Sesi kedaluwarsa → kembali ke layar login, jangan tampilkan dasbor mati
+    if (/login/i.test(msg)) {
+      localStorage.removeItem('admin_token');
+      document.getElementById('dMain').style.display = 'none';
+      document.getElementById('dLogin').style.display = 'block';
+      document.getElementById('btnOut').style.display = 'none';
+      document.getElementById('dmsg').textContent = 'Sesi berakhir (' + msg + '). Silakan tautkan ulang.';
+      return;
+    }
+    gagalBeruntun++;
+    const tunggu = Math.min(60, 10 * gagalBeruntun);
+    document.getElementById('dCount').textContent = 'Gagal memuat (' + msg + '). Mencoba lagi ' + tunggu + ' dtk...';
+    const box = document.getElementById('dMasak');
+    if (!DAPUR_CACHE.length && box && !box.dataset.err) {
+      box.dataset.err = '1';
+      box.innerHTML = '<div class="warn">' + escD(msg) + '<br><br><button class="btn sm" onclick="delete document.getElementById(\'dMasak\').dataset.err;poll(true)">Coba Lagi Sekarang</button></div>';
+    }
+    pollTimer = setTimeout(poll, tunggu * 1000);
+    return;
   }
   pollTimer = setTimeout(poll, 10000);
 }
 function gambar(box, list, sudahSiap) {
+  if (box.dataset.err) delete box.dataset.err;
   box.innerHTML = '';
   if (!list.length) { box.innerHTML = '<div class="empty">Belum ada pesanan</div>'; return; }
   list.forEach((o) => {
@@ -121,14 +151,15 @@ async function mulai() {
   document.getElementById('dLogin').style.display = 'none';
   document.getElementById('dMain').style.display = 'block';
   document.getElementById('btnOut').style.display = 'inline';
+  document.getElementById('dCount').textContent = 'Memuat data antrean...';
+  poll(true); // langsung jalan, jangan tunggu settings (GAS cold-start bisa lama)
   try {
     const s = await apiGet('settings');
     if (s.store_name) {
       document.title = 'Dapur — ' + s.store_name;
       document.getElementById('dapurBrand').textContent = s.store_name;
     }
-  } catch (e) { /* abaikan */ }
-  poll(true);
+  } catch (e) { /* abaikan, antrean tetap jalan */ }
 }
 setInterval(() => {
   const el = document.getElementById('dClock');

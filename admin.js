@@ -123,26 +123,80 @@ function printOrderStruk(id) {
   w.document.write(`<html><head><title>Struk ${esc(o.code)}</title><style>body{font-family:monospace;font-size:13px;padding:12px;max-width:58mm}hr{border-top:1px dashed #999}</style></head><body><center><b>${esc(document.title)}</b><br>${esc(o.code)} • ${esc(o.queue_no || '')}</center><hr>${esc(o.customer_name)} (${esc(o.customer_phone)})<br>${esc(o.created_at || '')}<hr>${rows}<hr>Subtotal: Rp${Number(o.subtotal || 0).toLocaleString('id-ID')}<br>Service: Rp${Number(o.service_fee || 0).toLocaleString('id-ID')}<br><b>Total: Rp${Number(o.total || 0).toLocaleString('id-ID')}</b><br>${esc(o.payment_method)} • ${esc(o.payment_status)}<hr><center>Terima kasih</center><script>window.print()<\/script></body></html>`);
   w.document.close();
 }
+let LAPORAN_CACHE = null;
 async function loadLaporan() {
   const periode = document.getElementById('fperiode').value;
   const sum = document.getElementById('lapSum'), tbl = document.getElementById('lapTable');
   tbl.innerHTML = '<p class="muted">Menyusun laporan penjualan...</p>';
+  const doc = document.getElementById('lapDoc'); if (doc) doc.innerHTML = '';
   try {
     const L = await apiGet('laporan', { token: token(), periode });
+    LAPORAN_CACHE = L;
     const nama = { harian: 'Hari Ini', mingguan: '7 Hari Terakhir', bulanan: 'Bulan Berjalan' }[L.periode] || L.periode;
     sum.innerHTML =
       `<div class="stat-card st-a"><b>${L.total_pesanan}</b><span>total pesanan • ${nama}</span></div>` +
       `<div class="stat-card st-b"><b>${rp(L.omzet)}</b><span>total omzet • ${nama}</span></div>` +
       `<div class="stat-card st-c"><b>${L.lunas}</b><span>pesanan lunas • ${L.menunggu} menunggu</span></div>`;
-    tbl.innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Tanggal</th><th>Pesanan</th><th>Omzet</th></tr>' +
+    tbl.innerHTML = '<div class="box screen-box" style="padding:0;overflow:auto"><table><tr><th>Tanggal</th><th>Pesanan</th><th>Omzet</th></tr>' +
       L.rows.map((r) => `<tr><td>${r.tanggal}</td><td>${r.pesanan}</td><td>${rp(r.omzet)}</td></tr>`).join('') +
       `<tr><td><b>Total</b></td><td><b>${L.total_pesanan}</b></td><td><b>${rp(L.omzet)}</b></td></tr></table></div>` +
       '<h3 style="margin:16px 0 4px">Rincian item terjual • ' + nama + '</h3>' +
       ((L.items && L.items.length)
-        ? '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Menu</th><th>Terjual</th><th>Omzet</th></tr>' +
+        ? '<div class="box screen-box" style="padding:0;overflow:auto"><table><tr><th>Menu</th><th>Terjual</th><th>Omzet</th></tr>' +
           L.items.map((it) => `<tr><td>${it.menu}</td><td>${it.qty} pcs</td><td>${rp(it.omzet)}</td></tr>`).join('') + '</table></div>'
         : '<p class="muted">Belum ada item terjual pada periode ini.</p>');
-  } catch (e) { tbl.innerHTML = '<div class="warn">Laporan belum dapat dimuat: ' + e.message + '</div>'; }
+    renderLapDoc(L, nama);
+  } catch (e) { tbl.innerHTML = '<div class="warn">Laporan belum dapat dimuat: ' + esc(e.message) + '</div>'; }
+}
+function renderLapDoc(L, nama) {
+  const doc = document.getElementById('lapDoc'); if (!doc) return;
+  const store = esc(L.store_name || document.title.replace(/^Admin — /, '') || 'UMKM Mandiri');
+  const rentang = esc((L.tanggal_awal || '') + (L.tanggal_akhir && L.tanggal_akhir !== L.tanggal_awal ? ' s/d ' + L.tanggal_akhir : ''));
+  const detail = L.detail || [];
+  const itemsLunas = L.items_lunas || L.items || [];
+  const byPay = L.by_payment || [];
+  const detRows = detail.map((o, i) => {
+    const itemTxt = (o.items || []).map((it) => `${it.qty}x ${it.menu_name}`).join(', ');
+    return `<tr><td class="num">${i + 1}</td><td>${esc(o.created_at)}</td><td><b>${esc(o.code)}</b><br><small>${esc(o.queue_no)}</small></td>` +
+      `<td>${esc(o.customer_name)}</td><td>${esc(itemTxt)}</td><td>${esc(o.payment_method)}</td><td class="num">${rp(o.total)}</td></tr>`;
+  }).join('');
+  doc.innerHTML = `<div class="lap-doc">
+    <div class="lap-kop"><b>${store}</b><span>LAPORAN PENJUALAN • ${esc(String(nama).toUpperCase())}</span><small>Periode: ${rentang} • Dicetak: ${esc(L.generated_at || '')}</small></div>
+    <table class="lap-tbl"><tr><th style="width:60%">Uraian</th><th class="num">Nilai</th></tr>
+      <tr><td>Total transaksi lunas</td><td class="num"><b>${L.lunas} transaksi</b></td></tr>
+      <tr><td>Total item terjual</td><td class="num"><b>${L.total_qty || 0} pcs</b></td></tr>
+      <tr><td>Total biaya layanan</td><td class="num">${rp(L.total_service_fee || 0)}</td></tr>
+      <tr><td><b>Total omzet</b></td><td class="num"><b>${rp(L.omzet)}</b></td></tr>
+      <tr><td>Transaksi menunggu pembayaran (tidak termasuk omzet)</td><td class="num">${L.menunggu}</td></tr>
+    </table>
+    <h4>A. Rincian Transaksi Lunas</h4>
+    ${detail.length
+      ? `<table class="lap-tbl"><tr><th class="num">No</th><th>Waktu</th><th>Kode</th><th>Pelanggan</th><th>Item</th><th>Bayar</th><th class="num">Total</th></tr>${detRows}` +
+        `<tr><td colspan="6"><b>Total ${detail.length} transaksi • ${L.total_qty || 0} pcs</b></td><td class="num"><b>${rp(L.omzet)}</b></td></tr></table>`
+      : '<p class="muted">Belum ada transaksi lunas pada periode ini.</p>'}
+    ${byPay.length ? `<h4>B. Rekap per Metode Pembayaran</h4><table class="lap-tbl"><tr><th>Metode</th><th class="num">Transaksi</th><th class="num">Omzet</th></tr>` +
+      byPay.map((b) => `<tr><td>${esc(b.method)}</td><td class="num">${b.transaksi}</td><td class="num">${rp(b.omzet)}</td></tr>`).join('') + '</table>' : ''}
+    <h4>C. Rekap Item Terjual (Lunas)</h4>
+    ${itemsLunas.length
+      ? `<table class="lap-tbl"><tr><th class="num">No</th><th>Menu</th><th class="num">Terjual</th><th class="num">Omzet</th></tr>` +
+        itemsLunas.map((it, i) => `<tr><td class="num">${i + 1}</td><td>${esc(it.menu)}</td><td class="num">${it.qty} pcs</td><td class="num">${rp(it.omzet)}</td></tr>`).join('') +
+        `<tr><td colspan="2"><b>Total</b></td><td class="num"><b>${L.total_qty || 0} pcs</b></td><td class="num"><b>${rp((itemsLunas || []).reduce((a, x) => a + (x.omzet || 0), 0))}</b></td></tr></table>`
+      : '<p class="muted">Belum ada item terjual pada periode ini.</p>'}
+    <div class="lap-sign"><span>Dicetak oleh Admin<br><br><br>( ........................ )</span><span>Mengetahui, Pemilik Toko<br><br><br>( ........................ )</span></div>
+  </div>`;
+}
+function exportLaporanCSV() {
+  const L = LAPORAN_CACHE;
+  if (!L || !(L.detail && L.detail.length)) { alert('Belum ada rincian transaksi untuk diekspor. Tampilkan laporan dulu.'); return; }
+  const head = ['no', 'waktu', 'kode', 'antrean', 'pelanggan', 'item', 'pembayaran', 'subtotal', 'biaya_layanan', 'total'];
+  const lines = [head.join(';')].concat(L.detail.map((o, i) => {
+    const itemTxt = (o.items || []).map((it) => it.qty + 'x ' + it.menu_name).join(', ');
+    return [i + 1, o.created_at, o.code, o.queue_no, o.customer_name, itemTxt, o.payment_method, o.subtotal, o.service_fee, o.total]
+      .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';');
+  }));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'laporan-' + (L.periode || 'harian') + '-' + (L.tanggal_akhir || 'hari-ini') + '.csv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 function printLaporan() {
   document.body.classList.add('p-laporan');

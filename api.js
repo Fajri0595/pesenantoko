@@ -3,11 +3,22 @@
 function API_URL() { return (window.GAS_API_URL || '').trim(); }
 function isConfigured() { return API_URL().indexOf('https://script.google.com/') === 0; }
 
+async function fetchT(url, opts, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms || 25000);
+  try {
+    return await fetch(url, Object.assign({}, opts, { signal: ctrl.signal }));
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error('Koneksi timeout — server lambat merespons. Coba lagi.');
+    throw new Error('Jaringan bermasalah: ' + (e.message || e));
+  } finally { clearTimeout(t); }
+}
+
 async function apiGet(action, params) {
   params = params || {};
   if (!isConfigured()) return demoGet(action, params);
   const qs = new URLSearchParams(Object.assign({ action: action }, params));
-  const r = await fetch(API_URL() + '?' + qs.toString());
+  const r = await fetchT(API_URL() + '?' + qs.toString());
   const j = await r.json();
   if (j && j.error) throw new Error(j.error);
   return j;
@@ -15,7 +26,7 @@ async function apiGet(action, params) {
 
 async function apiPost(body) {
   if (!isConfigured()) return demoPost(body);
-  const r = await fetch(API_URL(), {
+  const r = await fetchT(API_URL(), {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(body),
