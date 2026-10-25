@@ -1,8 +1,15 @@
-// Frontend publik (GitHub Pages) -> Backend GAS — v3: thumbnail foto, tanpa ikon
+// Frontend publik (GitHub Pages) -> Backend GAS — v4: Dine-In & Takeaway, Promo, Thermal POS
 let MENU = [], CART = [];
 try { CART = JSON.parse(localStorage.getItem('cart') || '[]'); } catch (e) { CART = []; }
 let PAYMENTS = {}, paySel = 'QRIS', lastOrder = null, lastLacak = null, showBayarRef = null;
-let SETTINGS = { store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • PRAKTIS & TANPA ANTRE', service_fee: 2000, estimasi: '15–20 menit', batas_bayar_menit: 15, jam_buka: '', jam_tutup: '', buka: true };
+let orderMode = 'takeaway'; // 'takeaway' | 'dine_in'
+let currentTableNo = '';
+let appliedPromo = null; // { code, discount, desc }
+let SETTINGS = {
+  store_name: 'UMKM MANDIRI', tagline: 'KULINER SPESIAL • TAKEAWAY & DINE-IN',
+  service_fee: 2000, estimasi: '15–20 menit', batas_bayar_menit: 15, jam_buka: '', jam_tutup: '', buka: true,
+  promo_codes: 'DISKON10:10%:15000,HEMAT5K:5000,MAKANENAK:15%:20000',
+};
 const stokOf = (m) => (m.stok === '' || m.stok === undefined || m.stok === null) ? -1 : (isNaN(parseInt(m.stok, 10)) ? -1 : parseInt(m.stok, 10));
 const fee = () => SETTINGS.service_fee || 0;
 const storeSlug = () => SETTINGS.store_name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'TOKO';
@@ -97,6 +104,78 @@ function syncPills() {
   const v = $('kategori').value;
   document.querySelectorAll('#pills .pill-btn').forEach((b) => b.classList.toggle('on', b.dataset.val === v));
 }
+function setPreset(id, val) {
+  const el = document.getElementById('lv-' + id);
+  if (el) { el.value = val; toast('Dipilih: ' + val); }
+}
+
+function setOrderMode(mode) {
+  orderMode = mode;
+  const btnTA = $('btnModeTA'), btnDI = $('btnModeDI'), boxT = $('boxTableNo'), badge = $('cartBadge');
+  if (btnTA) btnTA.classList.toggle('on', mode === 'takeaway');
+  if (btnDI) btnDI.classList.toggle('on', mode === 'dine_in');
+  if (boxT) boxT.style.display = mode === 'dine_in' ? 'block' : 'none';
+  if (badge) badge.textContent = mode === 'dine_in' ? 'Dine-In' : 'Takeaway';
+  const coB = $('coBadge');
+  if (coB) coB.textContent = mode === 'dine_in' ? 'Dine-In' : 'Takeaway';
+  const coTF = $('coTableField');
+  if (coTF) coTF.style.display = mode === 'dine_in' ? 'block' : 'none';
+  renderCart();
+}
+
+function parsePromos() {
+  const map = {
+    DISKON10: { code: 'DISKON10', type: 'percent', val: 10, max: 15000, desc: 'Diskon 10% (Maks Rp15.000)' },
+    HEMAT5K: { code: 'HEMAT5K', type: 'nominal', val: 5000, min: 25000, desc: 'Potongan Rp5.000 (Min. Rp25.000)' },
+    MAKANENAK: { code: 'MAKANENAK', type: 'percent', val: 15, max: 20000, desc: 'Diskon 15% (Maks Rp20.000)' },
+  };
+  return map;
+}
+
+function applyPromo() {
+  const code = ($('promoCode')?.value || '').trim().toUpperCase();
+  const fb = $('promoFeedback');
+  if (!code) {
+    appliedPromo = null;
+    if (fb) fb.innerHTML = '';
+    renderCart();
+    return;
+  }
+  const promos = parsePromos();
+  const found = promos[code];
+  if (!found) {
+    if (fb) fb.innerHTML = '<span style="color:#d9534f">Kode promo tidak valid</span>';
+    appliedPromo = null;
+    renderCart();
+    return;
+  }
+  const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
+  if (found.min && sub < found.min) {
+    if (fb) fb.innerHTML = `<span style="color:#b97900">Minimal belanja ${rp(found.min)} untuk promo ini</span>`;
+    appliedPromo = null;
+    renderCart();
+    return;
+  }
+  appliedPromo = found;
+  if (fb) fb.innerHTML = `<span style="color:var(--green)">✓ Kupon aktif: ${esc(found.desc)}</span>`;
+  toast('Kode promo ' + code + ' berhasil diterapkan!');
+  renderCart();
+}
+
+function calcPromoDiscount(sub) {
+  if (!appliedPromo) return 0;
+  if (appliedPromo.type === 'percent') {
+    let d = Math.round((sub * appliedPromo.val) / 100);
+    if (appliedPromo.max) d = Math.min(d, appliedPromo.max);
+    return Math.max(0, d);
+  }
+  if (appliedPromo.type === 'nominal') {
+    if (appliedPromo.min && sub < appliedPromo.min) return 0;
+    return Math.min(sub, appliedPromo.val);
+  }
+  return 0;
+}
+
 function render() {
   const q = ($('q').value || '').toLowerCase();
   const kat = $('kategori').value;
@@ -115,22 +194,31 @@ function render() {
     const nm = String(m.name || '');
     const isPedas = /level\s*[4-9]|level\s*8|pedas/i.test(nm);
     const sisa = stokOf(m);
+    let presets = [];
+    if (/mie/i.test(m.category || nm)) presets = ['Lv 0', 'Lv 1', 'Lv 2', 'Lv 3', 'Lv 4'];
+    else if (/minum|es|teh|kopi/i.test(m.category || nm)) presets = ['Es Normal', 'Less Ice', 'Hangat'];
+    else if (/dimsum|siomay|udang/i.test(m.category || nm)) presets = ['Kukus', 'Goreng', 'Ekstra Saus'];
+
+    const chipsHtml = presets.length ? `<div class="opt-chips">${presets.map((t) => `<button type="button" class="opt-chip" onclick="setPreset(${m.id},'${t}')">${t}</button>`).join('')}</div>` : '';
+
     d.innerHTML = `<div class="thumb"><img src="${esc(img)}" alt="${esc(nm)}" loading="lazy" onerror="imgFallback(this)">${isPedas ? '<span class="flag">Pedas</span>' : ''}</div><div class="body">
       <div class="cat">${esc(m.category || '')}</div><h3>${esc(nm)}</h3>
       <div class="desc">${esc(m.description || '')}</div>
       <div class="price-row"><div class="price">${rp(m.price)}</div><span class="badge ${sisa === 0 ? 'pending' : ''}">${sisa === -1 ? 'Tersedia' : (sisa === 0 ? 'Habis' : 'Sisa ' + sisa + ' porsi')}</span></div>
-       <input id="lv-${m.id}" class="level" type="text" placeholder="Level / catatan — contoh: Lv 4" maxlength="20" aria-label="Level untuk ${esc(nm)}">
+      ${chipsHtml}
+      <input id="lv-${m.id}" class="level" type="text" placeholder="Catatan/level rasa (opsional)" maxlength="30" aria-label="Level untuk ${esc(nm)}">
       <div class="act">
         <div class="qty"><button onclick="addCart(${m.id},-1)" aria-label="Kurangi">−</button><button onclick="addCart(${m.id},1)" aria-label="Tambah">+</button></div>
-        <button class="add" onclick="addCart(${m.id},1)" ${sisa === 0 ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${sisa === 0 ? 'Habis' : 'Tambah'}</button>
+        <button class="add" onclick="addCart(${m.id},1)" ${sisa === 0 ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${sisa === 0 ? 'Habis' : '+ Keranjang'}</button>
       </div></div>`;
     g.appendChild(d);
   });
   if (!g.children.length) g.innerHTML = '<div class="empty">Menu tidak ditemukan. Silakan coba kata kunci lain.</div>';
 }
+
 function addCart(id, delta) {
   const m = MENU.find((x) => x.id === id); if (!m) return;
-  const lv = (document.getElementById('lv-' + id)?.value || '').slice(0, 20);
+  const lv = (document.getElementById('lv-' + id)?.value || '').slice(0, 30);
   if (delta > 0) {
     const sisa = stokOf(m);
     const diKeranjang = CART.filter((c) => c.menu_id === id).reduce((a, c) => a + c.qty, 0);
@@ -138,17 +226,19 @@ function addCart(id, delta) {
     const same = CART.find((c) => c.menu_id === id && (c.level || '') === lv);
     if (same) same.qty = Math.min(20, same.qty + 1);
     else CART.push({ menu_id: id, name: m.name, price: m.price, qty: 1, level: lv });
-    toast(m.name + ' telah ditambahkan ke keranjang');
+    toast(m.name + ' ditambahkan ke keranjang');
   } else {
     const i = CART.findIndex((c) => c.menu_id === id);
     if (i > -1) { CART[i].qty--; if (CART[i].qty <= 0) CART.splice(i, 1); }
   }
   saveCart(true);
 }
+
 function saveCart(pop) {
   localStorage.setItem('cart', JSON.stringify(CART)); renderCart();
   if (pop) { const f = $('fab'); f.classList.remove('pop'); void f.offsetWidth; f.classList.add('pop'); }
 }
+
 function renderCart() {
   const count = CART.reduce((a, c) => a + c.qty, 0);
   $('cnt').textContent = count;
@@ -167,15 +257,28 @@ function renderCart() {
     box.appendChild(d);
   });
   if (!CART.length) box.innerHTML = '<div class="empty">Keranjang Anda masih kosong.<br>Silakan pilih menu favorit Anda terlebih dahulu.</div>';
-  const total = sub + (CART.length ? fee() : 0);
+
+  const disc = calcPromoDiscount(sub);
+  const rowPromo = $('rowPromo');
+  if (rowPromo) {
+    if (disc > 0 && appliedPromo) {
+      rowPromo.style.display = 'flex';
+      $('promoName').textContent = appliedPromo.code;
+      $('cdisc').textContent = '-' + rp(disc);
+    } else {
+      rowPromo.style.display = 'none';
+    }
+  }
+
+  const total = Math.max(0, sub - disc + (CART.length ? fee() : 0));
   $('csub').textContent = rp(sub);
   $('ctotal').textContent = rp(total);
   $('fabTotal').textContent = rp(total);
-  const fab = $('fab');
-  if (fab) fab.style.display = CART.length ? '' : '';
 }
+
 function chQty(i, d) { CART[i].qty += d; if (CART[i].qty <= 0) CART.splice(i, 1); saveCart(); }
 function rmItem(i) { CART.splice(i, 1); saveCart(); }
+
 function toggleCart(forceOpen) {
   const p = $('cartPanel'); if (!p) return;
   if (window.innerWidth < 1024) {
@@ -214,12 +317,26 @@ function validHP(hp) {
   else if (d.startsWith('8') && !d.startsWith('0')) d = '0' + d;
   return /^08\d{8,12}$/.test(d) ? d : null;
 }
+
 function openCheckout() {
   if (!CART.length) { toast('Keranjang Anda masih kosong'); return; }
   if (SETTINGS.buka === false) { toast('Mohon maaf, toko sedang tutup (' + SETTINGS.jam_buka + '–' + SETTINGS.jam_tutup + '). Silakan kembali pada jam operasional.'); return; }
   loadCustomer();
+  const tInput = $('tableNo')?.value.trim();
+  if (tInput) currentTableNo = tInput;
+
+  const coT = $('coTable');
+  if (coT) coT.value = currentTableNo;
+  const coTF = $('coTableField');
+  if (coTF) coTF.style.display = orderMode === 'dine_in' ? 'block' : 'none';
+  const coB = $('coBadge');
+  if (coB) coB.textContent = orderMode === 'dine_in' ? 'Dine-In' + (currentTableNo ? ' (Meja ' + currentTableNo + ')' : '') : 'Takeaway';
+
   const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
-  $('coSum').innerHTML = `${CART.length} jenis menu • Subtotal ${rp(sub)} + biaya layanan ${rp(fee())} = <b>${rp(sub + fee())}</b>`;
+  const disc = calcPromoDiscount(sub);
+  const total = Math.max(0, sub - disc + fee());
+  const discText = disc > 0 ? ` • Diskon Promo: -${rp(disc)}` : '';
+  $('coSum').innerHTML = `${CART.length} jenis menu • Subtotal ${rp(sub)}${discText} + Layanan ${rp(fee())} = <b>${rp(total)}</b>`;
   closeCartDrawer();
   openM('mCheckout');
   setTimeout(() => { const n = $('nama'); if (n && !n.value) n.focus(); }, 100);
@@ -233,15 +350,36 @@ async function buatPesanan() {
   const rawHP = $('hp').value.trim();
   const customer_phone = validHP(rawHP);
   const note = $('catatan').value.trim().slice(0, 200);
+  const tableVal = ($('coTable')?.value || $('tableNo')?.value || '').trim();
+
+  if (orderMode === 'dine_in' && !tableVal) {
+    toast('Mohon isi nomor meja Anda untuk pemesanan Makan di Tempat (Dine-in)');
+    $('coTable')?.focus();
+    return;
+  }
+  currentTableNo = tableVal;
+
   if (!customer_name) { toast('Mohon isi nama pemesan'); $('nama').focus(); return; }
   if (!customer_phone) { toast('No. HP tidak valid. Contoh: 081234567890'); $('hp').focus(); return; }
   if (!PAYMENTS[paySel]) { toast('Metode pembayaran tidak tersedia'); return; }
   if (!CART.length) return;
+
+  const sub = CART.reduce((a, c) => a + c.price * c.qty, 0);
+  const disc = calcPromoDiscount(sub);
+
   const btn = $('btnOrder'); btn.disabled = true; btn.textContent = 'Memproses pesanan...';
   try {
     const j = await apiPost({
-      action: 'createOrder', customer_name, customer_phone, note,
-      payment_method: paySel, items: CART.map((c) => ({ menu_id: c.menu_id, qty: c.qty, level: c.level })),
+      action: 'createOrder',
+      customer_name,
+      customer_phone,
+      note,
+      order_type: orderMode,
+      table_no: currentTableNo,
+      discount: disc,
+      promo_code: appliedPromo ? appliedPromo.code : '',
+      payment_method: paySel,
+      items: CART.map((c) => ({ menu_id: c.menu_id, qty: c.qty, level: c.level })),
     });
     lastOrder = j.order;
     try { localStorage.setItem('last_code', lastOrder.code); } catch (e) {}
@@ -251,7 +389,7 @@ async function buatPesanan() {
     if (lastOrder.payment_method === 'CASH') showStruk(lastOrder);
     else showBayar(lastOrder);
   } catch (e) { toast(e.message); }
-  btn.disabled = false; btn.textContent = 'Konfirmasi Pesanan';
+  btn.disabled = false; btn.textContent = 'Pesan Sekarang';
 }
 function saveCustomer(nama, hp) { try { localStorage.setItem('cust_name', nama); localStorage.setItem('cust_hp', hp); } catch (e) {} }
 function loadCustomer() { try { if (!$('nama').value) $('nama').value = localStorage.getItem('cust_name') || ''; if (!$('hp').value) $('hp').value = localStorage.getItem('cust_hp') || ''; } catch (e) {} }
@@ -336,38 +474,77 @@ async function simPay(code) {
   } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Membayar'; toast(e.message); }
 }
 function showStruk(o) {
+  if (!o) return;
+  lastOrder = o;
   const lunas = o.payment_status === 'paid';
   const payLabel = payLabelOf(o.payment_method);
   const tgl = o.created_at || new Date().toLocaleString('id-ID');
+  const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+  const tipeBadge = isDineIn ? `🍽️ DINE-IN ${o.table_no ? '(Meja ' + esc(o.table_no) + ')' : ''}` : '🛍️ TAKEAWAY';
   const itemsHtml = (o.items || []).map((i) => `<tr><td>${esc(i.qty)} x ${esc(i.menu_name)} <small class="muted">${esc(i.level || '')}</small><br><small class="muted">${rp(i.price)} / porsi</small></td><td style="text-align:right;white-space:nowrap">${rp(i.price * i.qty)}</td></tr>`).join('');
+  const discRow = Number(o.discount) > 0 ? `<tr><td>Diskon Promo ${o.promo_code ? '(' + esc(o.promo_code) + ')' : ''}</td><td style="text-align:right;color:#2e7d4f">- ${rp(o.discount)}</td></tr>` : '';
+
   $('sBody').innerHTML = `
     <div id="strukPrint" class="struk">
-      <div class="struk-head"><b>${esc(SETTINGS.store_name)}</b><span>Layanan Takeaway</span></div>
+      <div class="struk-head"><b>${esc(SETTINGS.store_name)}</b><span style="font-weight:700;color:var(--brand-d)">${tipeBadge}</span></div>
       <div class="struk-row"><span>No. Struk</span><b>${esc(o.code)}</b></div>
       <div class="struk-row"><span>No. Antrean</span><b>${esc(o.queue_no || '-')}</b></div>
       <div class="struk-row"><span>Tanggal</span><span>${esc(tgl)}</span></div>
-      <div class="struk-row"><span>Pemesan</span><span>${esc(o.customer_name)} (${esc(o.customer_phone)})</span></div>
+      <div class="struk-row"><span>Pemesan</span><span>${esc(o.customer_name)} (${esc(o.customer_phone || '-')})</span></div>
       ${o.note ? `<div class="struk-row"><span>Catatan</span><span>${esc(o.note)}</span></div>` : ''}
       <div class="struk-div"></div>
       <table>${itemsHtml}
       <tr><td>Subtotal</td><td style="text-align:right">${rp(o.subtotal)}</td></tr>
+      ${discRow}
       <tr><td>Biaya Layanan</td><td style="text-align:right">${rp(o.service_fee)}</td></tr>
       <tr><td><b>Total Pembayaran</b></td><td style="text-align:right"><b>${rp(o.total)}</b></td></tr></table>
       <div class="struk-div"></div>
       <div class="struk-row"><span>Metode</span><b>${esc(payLabel)}</b></div>
-      <div class="struk-row"><span>Status Pembayaran</span><span class="badge ${lunas ? 'paid' : 'pending'}">${lunas ? 'LUNAS' : (o.payment_method === 'CASH' ? 'BAYAR DI COUNTER' : 'MENUNGGU PEMBAYARAN')}</span></div>
-      <div class="struk-row"><span>Estimasi Siap</span><span>${esc(SETTINGS.estimasi)}</span></div>
+      <div class="struk-row"><span>Status Bayar</span><span class="badge ${lunas ? 'paid' : 'pending'}">${lunas ? 'LUNAS' : (o.payment_method === 'CASH' ? 'BAYAR DI KASIR' : 'MENUNGGU PEMBAYARAN')}</span></div>
+      <div class="struk-row"><span>Estimasi</span><span>${esc(SETTINGS.estimasi)}</span></div>
       <div class="qrbox" style="margin-top:12px"><div style="font-size:26px;font-weight:800;letter-spacing:2px">${esc(o.code)}</div>
-      <div>Mohon tunjukkan kode ini di counter</div></div>
-      <p class="muted" style="text-align:center">Terima kasih telah memesan di ${esc(SETTINGS.store_name)}</p>
-    </div>
-    <div class="row no-print" style="margin-top:12px"><button class="btn ghost" onclick="printStruk()">Cetak Struk</button>
-    <button class="btn ghost" id="btnSalin">Salin Kode</button>
-    <button class="btn" onclick="lacakDariStruk()">Lacak Pesanan</button></div>`;
-  const btnSalin = $('btnSalin');
-  if (btnSalin) btnSalin.onclick = () => salinKode(o.code);
+      <div>Tunjukkan struk ini kepada staf / kasir</div></div>
+      <p class="muted" style="text-align:center">Terima kasih atas kunjungan Anda di ${esc(SETTINGS.store_name)}</p>
+    </div>`;
   openM('mStruk');
 }
+
+function shareStrukWA() {
+  const o = lastOrder;
+  if (!o) { toast('Data struk tidak ditemukan'); return; }
+  const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+  const trackUrl = window.location.origin + window.location.pathname + '?kode=' + encodeURIComponent(o.code) + '#lacak';
+  const itemsTxt = (o.items || []).map((i) => `• ${i.qty}x ${i.menu_name} ${i.level ? '(' + i.level + ')' : ''} = ${rp(i.price * i.qty)}`).join('\n');
+  const discTxt = Number(o.discount) > 0 ? `\nDiskon Promo: -${rp(o.discount)}` : '';
+
+  const msg = `🧾 *STRUK PESANAN ${SETTINGS.store_name}*\n` +
+    `-----------------------------------------\n` +
+    `Kode: *${o.code}*\n` +
+    `Antrean: *${o.queue_no || '-'}*\n` +
+    `Layanan: *${isDineIn ? 'Dine-In' + (o.table_no ? ' (Meja ' + o.table_no + ')' : '') : 'Takeaway (Bungkus)'}*\n` +
+    `Pemesan: ${o.customer_name}\n` +
+    `Waktu: ${o.created_at || 'Baru saja'}\n` +
+    `-----------------------------------------\n` +
+    `*Rincian Menu:*\n${itemsTxt}\n` +
+    `-----------------------------------------\n` +
+    `Subtotal: ${rp(o.subtotal)}${discTxt}\n` +
+    `Biaya Layanan: ${rp(o.service_fee)}\n` +
+    `*TOTAL: ${rp(o.total)}*\n` +
+    `Pembayaran: ${payLabelOf(o.payment_method)} (${o.payment_status === 'paid' ? 'LUNAS' : 'MENUNGGU PEMBAYARAN'})\n` +
+    `-----------------------------------------\n` +
+    `Pantau status pesanan Anda di sini:\n${trackUrl}\n\n` +
+    `Terima kasih telah memesan di ${SETTINGS.store_name}!`;
+
+  const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+
+function printStrukDirect() {
+  document.body.classList.add('p-struk');
+  window.print();
+  setTimeout(() => document.body.classList.remove('p-struk'), 500);
+}
+
 function salinKode(code) {
   const done = () => toast('Kode ' + code + ' disalin');
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done).catch(() => fallbackSalin(code, done));
@@ -382,9 +559,7 @@ function shareWA(code) {
   window.open('https://wa.me/?text=' + txt, '_blank');
 }
 function printStruk() {
-  document.body.classList.add('p-struk');
-  window.print();
-  setTimeout(() => document.body.classList.remove('p-struk'), 500);
+  printStrukDirect();
 }
 function lacakDariStruk() {
   let code = (lastOrder && lastOrder.code) || '';
@@ -414,13 +589,17 @@ async function lacak(silent) {
       return `<span class="pill ${i < idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${esc(STATUS[s])}</span>`;
     }).join(' → ');
     const selesai = ['selesai', 'dibatalkan', 'kedaluwarsa'].includes(o.status);
+    const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+    const modeBadge = isDineIn ? `🍽️ DINE-IN ${o.table_no ? '(Meja ' + esc(o.table_no) + ')' : ''}` : '🛍️ TAKEAWAY';
+
     box.innerHTML = `<div class="track-card">
       <div class="row" style="justify-content:space-between"><b style="font-size:18px">${esc(o.code)}</b>
-      <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${o.payment_status === 'paid' ? 'LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI COUNTER' : 'BELUM DIBAYAR'}</span></div>
-      <div class="muted">${esc(o.queue_no || '-')} • ${esc(payLabelOf(o.payment_method))} • ${esc(o.customer_name || '')} • ${rp(o.total)}</div>
+      <div class="row"><span class="chip" style="padding:4px 10px;font-size:12px">${modeBadge}</span>
+      <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${o.payment_status === 'paid' ? 'LUNAS' : o.payment_status === 'unpaid_cash' ? 'BAYAR DI KASIR' : 'BELUM DIBAYAR'}</span></div></div>
+      <div class="muted" style="margin-top:4px">${esc(o.queue_no || '-')} • ${esc(payLabelOf(o.payment_method))} • ${esc(o.customer_name || '')} • <b>${rp(o.total)}</b></div>
       <div class="timeline">${pills}</div>
       <small class="muted">${esc(o.created_at || '')} • auto-refresh 10 dtk</small>
-      <div class="row" style="margin-top:8px">
+      <div class="row" style="margin-top:10px">
       ${o.payment_method !== 'CASH' && o.payment_status !== 'paid' && !selesai ? `<button class="btn" id="btnBayarLacak">Bayar Sekarang</button>` : ''}
       <button class="btn ghost" id="btnSalinLacak">Salin Kode</button>
       <button class="btn ghost" id="btnWALacak">Tanya via WA</button>
@@ -449,7 +628,7 @@ function renderRiwayat() {
   box.innerHTML = '<span class="muted">Terakhir:</span> ' + r.map((c) => `<button class="pill-btn sm" data-kode="${esc(c)}">${esc(c)}</button>`).join(' ');
   box.querySelectorAll('button').forEach((b) => b.onclick = () => { $('kode').value = b.dataset.kode; lacak(); });
 }
-// Init tambahan: deep-link ?kode=, sortir, customer tersimpan, tutup drawer saat checkout
+// Init tambahan: deep-link ?kode=, sortir, customer tersimpan, parameter ?meja=
 (function initExtra() {
   document.addEventListener('DOMContentLoaded', () => {
     loadCustomer();
@@ -458,7 +637,18 @@ function renderRiwayat() {
       const u = new URL(location.href);
       const k = (u.searchParams.get('kode') || '').toUpperCase();
       if (k) { $('kode').value = k; lacak(); }
-      else { const lc = localStorage.getItem('last_code'); if (lc && !$('kode').value) { /* jangan auto, hanya saran */ } }
+      const mejaParam = u.searchParams.get('meja') || u.searchParams.get('table');
+      if (mejaParam) {
+        setOrderMode('dine_in');
+        currentTableNo = mejaParam.trim();
+        const tInp = $('tableNo'); if (tInp) tInp.value = currentTableNo;
+        const coT = $('coTable'); if (coT) coT.value = currentTableNo;
+        const notice = $('tableNotice');
+        if (notice) {
+          notice.style.display = 'block';
+          notice.innerHTML = `🍽️ <b>Mode Meja ${esc(currentTableNo)} Aktif:</b> Anda memesan langsung untuk Makan di Tempat (Dine-In).`;
+        }
+      }
     } catch (e) {}
     const s = $('sort'); if (s) s.onchange = render;
     const oa = $('onlyAvail'); if (oa) oa.onchange = render;

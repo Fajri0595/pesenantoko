@@ -47,11 +47,13 @@
     <div class="step"><span class="n">4</span><b>Pengambilan</b><span>Tunjukkan kode GC-XXXX di counter.</span></div>
   </div>
 
+  <div id="tableNotice" class="table-notice" style="display:none"></div>
+
   <div class="shop">
     <div class="shop-main">
-      <div class="sec"><div><h2 id="menu">Jelajahi Menu</h2><p id="menuCount">Memuat pilihan menu...</p></div></div>
+      <div class="sec"><div><h2 id="menu">Pilihan Menu Spesial</h2><p id="menuCount">Memuat pilihan menu...</p></div></div>
       <div class="toolbar">
-        <div class="search"><input id="q" type="text" placeholder="Cari mie level, siomay, atau minuman favorit..." autocomplete="off"></div>
+        <div class="search"><input id="q" type="text" placeholder="Cari mie level, siomay, atau minuman..." autocomplete="off"></div>
         <select id="kategori" aria-label="Kategori"><option value="">Semua Kategori</option></select>
         <select id="sort" aria-label="Urutkan"><option value="">Populer</option><option value="murah">Termurah</option><option value="mahal">Termahal</option><option value="nama">Nama A-Z</option></select>
         <label class="avail"><input type="checkbox" id="onlyAvail" style="width:auto"> Tersedia</label>
@@ -66,9 +68,31 @@
         <div><b>Keranjang Anda</b><p class="muted" id="cartSub" style="margin:2px 0 0">Belum ada menu dipilih</p></div>
         <div class="row"><span class="badge" id="cartBadge">Takeaway</span><button class="btn sm ghost cart-close" onclick="closeCartDrawer()" aria-label="Tutup keranjang">✕</button></div>
       </div>
+
+      <!-- Mode Pemesanan: Takeaway vs Dine-In -->
+      <div class="mode-switcher">
+        <button id="btnModeTA" class="mode-btn on" onclick="setOrderMode('takeaway')">🛍️ Takeaway</button>
+        <button id="btnModeDI" class="mode-btn" onclick="setOrderMode('dine_in')">🍽️ Dine-In</button>
+      </div>
+      <div id="boxTableNo" class="table-input-wrap" style="display:none">
+        <label for="tableNo">Nomor Meja Anda <span style="color:#d9534f">*</span></label>
+        <input id="tableNo" type="text" placeholder="Contoh: 04" maxlength="10">
+      </div>
+
       <div id="citems" class="cart-items"></div>
+
+      <!-- Voucher / Promo Code Box -->
+      <div class="promo-box">
+        <div class="promo-input-row">
+          <input id="promoCode" type="text" placeholder="Kode promo (cth: DISKON10)" style="text-transform:uppercase" autocomplete="off">
+          <button class="btn sm" onclick="applyPromo()">Terapkan</button>
+        </div>
+        <div id="promoFeedback" class="promo-feedback"></div>
+      </div>
+
       <div class="cart-foot">
         <div class="total-row"><span>Subtotal</span><b id="csub">Rp0</b></div>
+        <div id="rowPromo" class="total-row discount-row" style="display:none"><span>Diskon Promo (<span id="promoName"></span>)</span><b id="cdisc">-Rp0</b></div>
         <div class="total-row muted"><span>Biaya Layanan</span><span id="svcLabel">Rp2.000</span></div>
         <div class="total-row" style="font-size:18px"><span>Total Pembayaran</span><b id="ctotal">Rp0</b></div>
         <button class="btn" style="width:100%;margin-top:10px;padding:14px" onclick="openCheckout()">Lanjut ke Checkout</button>
@@ -76,7 +100,7 @@
     </aside>
   </div>
 
-  <div class="sec"><div><h2 id="lacak">Lacak Pesanan</h2><p>Masukkan kode pada struk Anda (contoh GC-AB12CD).</p></div></div>
+  <div class="sec"><div><h2 id="lacak">Lacak Status Pesanan</h2><p>Pantau perkembangan pesanan Anda secara real-time dengan kode GC-XXXX.</p></div></div>
   <div class="track-form">
     <input id="kode" type="text" placeholder="GC-XXXXXX" style="text-transform:uppercase" autocomplete="off" spellcheck="false">
     <button class="btn" onclick="lacak()">Lacak Sekarang</button>
@@ -84,7 +108,7 @@
   <div id="riwayat" class="pills" style="margin-top:8px"></div>
   <div id="hasil"></div>
 
-  <footer class="site"><span id="footBrand">UMKM Mandiri</span> • Pesan Online, Ambil di Counter • Mendukung QRIS, E-Wallet, dan Tunai
+  <footer class="site"><span id="footBrand">UMKM Mandiri</span> • Layanan Kuliner Profesional • Mendukung Dine-In & Takeaway
     <div class="pay-row"><span>QRIS</span><span>GoPay</span><span>OVO</span><span>DANA</span><span>Tunai</span></div>
   </footer>
 </div>
@@ -93,14 +117,21 @@
 <div id="toast"></div>
 
 <div id="mCheckout" class="modal"><div class="box">
-  <h2>Checkout Takeaway</h2><div class="muted">Langkah 1 dari 2 — Data pengambilan dan pembayaran</div>
+  <div class="row" style="justify-content:space-between">
+    <h2 style="margin:0">Konfirmasi Pemesanan</h2>
+    <span id="coBadge" class="badge">Takeaway</span>
+  </div>
+  <div class="muted" style="margin-bottom:12px">Langkah 1 dari 2 — Lengkapi data pemesan</div>
   <label>Nama Pemesan</label><input id="nama" type="text" placeholder="Nama lengkap pemesan" autocomplete="name">
-  <label>No. HP / WhatsApp</label><input id="hp" type="tel" placeholder="08xx xxxx xxxx" autocomplete="tel">
+  <label>No. HP / WhatsApp (untuk konfirmasi pesanan)</label><input id="hp" type="tel" placeholder="08xx xxxx xxxx" autocomplete="tel">
+  <div id="coTableField" style="display:none">
+    <label>Nomor Meja</label><input id="coTable" type="text" placeholder="Nomor meja tempat Anda duduk">
+  </div>
   <label>Catatan Pesanan (Opsional)</label><input id="catatan" type="text" placeholder="Contoh: es sedikit, mie setengah matang...">
   <label>Metode Pembayaran</label><div id="pays"></div>
   <div id="coSum" style="margin:12px 0;font-size:14px"></div>
-  <div class="row"><button class="btn ghost" onclick="closeM('mCheckout')">Batalkan</button>
-  <button id="btnOrder" class="btn" onclick="buatPesanan()">Konfirmasi Pesanan</button></div>
+  <div class="row"><button class="btn ghost" onclick="closeM('mCheckout')">Kembali</button>
+  <button id="btnOrder" class="btn" onclick="buatPesanan()">Pesan Sekarang</button></div>
 </div></div>
 
 <div id="mBayar" class="modal"><div class="box">
@@ -109,10 +140,16 @@
 </div></div>
 
 <div id="mStruk" class="modal"><div class="box" style="text-align:left">
-  <h2>Pesanan Berhasil Dibuat</h2>
+  <div class="row" style="justify-content:space-between;margin-bottom:8px">
+    <h2 style="margin:0">Struk Pesanan Resmi</h2>
+    <button class="btn sm ghost" onclick="printStrukDirect()">🖨️ Cetak Struk</button>
+  </div>
   <div id="sBody"></div>
-  <div class="row" style="margin-top:12px"><button class="btn ghost" onclick="closeM('mStruk')">Tutup</button>
-  <button class="btn" onclick="lacakDariStruk()">Lacak Status</button></div>
+  <div class="row" style="margin-top:14px;gap:8px">
+    <button id="btnShareWA" class="btn green" style="flex:1" onclick="shareStrukWA()">💬 Kirim ke WhatsApp</button>
+    <button class="btn" style="flex:1" onclick="lacakDariStruk()">Lacak Status</button>
+    <button class="btn ghost" onclick="closeM('mStruk')">Tutup</button>
+  </div>
 </div></div>
 
 <script src="./config.js"></script>

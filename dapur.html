@@ -21,7 +21,14 @@
 <header class="top"><div class="brand"><img class="logo-img" src="./favicon.svg" alt="Logo"><div><div class="logo" id="dapurBrand">UMKM MANDIRI</div><small>DAPUR & ANTREAN</small></div></div>
 <nav><span id="dClock">--:--</span><a href="./admin.html">Panel Admin</a><button id="btnSound" onclick="aktifkanSuara()">Aktifkan Notifikasi Suara</button><button onclick="toggleTV()">TV Mode</button><button onclick="poll(true)">Refresh</button><button id="btnOut" style="display:none" onclick="keluar()">Keluar</button></nav></header>
 <div class="wrap">
-  <div class="row no-print" style="margin:10px 0"><input id="dq" type="text" placeholder="Cari kode / nama..." style="max-width:260px" oninput="cariDapur()"></div>
+  <div class="row no-print" style="margin:10px 0;justify-content:space-between">
+    <input id="dq" type="text" placeholder="Cari kode / nama / meja..." style="max-width:240px" oninput="cariDapur()">
+    <div class="pills" style="margin:0">
+      <button class="pill-btn on" id="dFltAll" onclick="setDapurFilter('all')">Semua Antrean</button>
+      <button class="pill-btn" id="dFltDI" onclick="setDapurFilter('dine_in')">🍽️ Dine-In</button>
+      <button class="pill-btn" id="dFltTA" onclick="setDapurFilter('takeaway')">🛍️ Takeaway</button>
+    </div>
+  </div>
   <div id="dLogin" class="box login-card">
     <h2>Tautkan Layar Dapur</h2><p class="muted">Masuk sekali dengan akun admin. Perangkat ini akan tetap terhubung otomatis.</p>
     <label>Nama Pengguna</label><input id="du" type="text" placeholder="Nama pengguna admin" autocomplete="username">

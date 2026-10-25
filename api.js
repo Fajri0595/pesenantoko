@@ -53,13 +53,19 @@ const DEMO_MENU = [
   { id: 11, name: 'Es Gobak Sodor', category: 'Minuman', price: 9000, description: 'Best seller.', emoji: 'https://images.unsplash.com/photo-1558857563-b371033873b8?q=80&w=800&auto=format&fit=crop', is_available: 1 },
   { id: 13, name: 'Es Teklek', category: 'Minuman', price: 8000, description: 'Teh + jeruk + soda.', emoji: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=800&auto=format&fit=crop', is_available: 1 },
 ];
+const DEMO_PROMOS = {
+  DISKON10: { type: 'percent', val: 10, max: 15000, desc: 'Diskon 10% (Maks Rp15.000)' },
+  HEMAT5K: { type: 'nominal', val: 5000, min: 25000, desc: 'Potongan Rp5.000 (Min. Belanja Rp25.000)' },
+  MAKANENAK: { type: 'percent', val: 15, max: 20000, desc: 'Diskon 15% (Maks Rp20.000)' },
+};
 let demoSeq = 1;
 function demoGet(action, params) {
   params = params || {};
   if (action === 'payments') return Promise.resolve(DEMO_PAYMENTS);
   if (action === 'settings') return Promise.resolve({
-    store_name: 'UMKM MANDIRI', tagline: 'TAKEAWAY • PRAKTIS & TANPA ANTRE',
+    store_name: 'UMKM MANDIRI', tagline: 'KULINER SPESIAL • TAKEAWAY & DINE-IN',
     service_fee: 2000, estimasi: '15–20 menit', payments: DEMO_PAYMENTS,
+    promo_codes: 'DISKON10,HEMAT5K,MAKANENAK',
   });
   if (action === 'kategori') return Promise.resolve(['Dimsum', 'Mie', 'Minuman']);
   if (action === 'menu') {
@@ -73,18 +79,29 @@ function demoGet(action, params) {
 }
 function demoPost(body) {
   if (body.action === 'createOrder') {
+    const isDineIn = body.order_type === 'dine_in';
     const code = 'GC-DEMO' + String(demoSeq).padStart(2, '0');
-    const queue_no = 'TA-' + String(demoSeq).padStart(3, '0');
+    const prefix = isDineIn ? 'DI-' : 'TA-';
+    const queue_no = prefix + String(demoSeq).padStart(3, '0') + (isDineIn && body.table_no ? ' (Meja ' + body.table_no + ')' : '');
     demoSeq++;
     const subtotal = (body.items || []).reduce(function (a, it) {
       const m = DEMO_MENU.filter(function (x) { return x.id === Number(it.menu_id); })[0];
       return a + (m ? m.price * (it.qty || 1) : 0);
     }, 0);
+    const discount = Math.max(0, parseInt(body.discount, 10) || 0);
+    const total = Math.max(0, subtotal - discount + 2000);
     const order = {
-      id: demoSeq, code: code, queue_no: queue_no, customer_name: body.customer_name,
+      id: demoSeq, code: code, queue_no: queue_no,
+      order_type: isDineIn ? 'dine_in' : 'takeaway',
+      table_no: body.table_no || '',
+      discount: discount,
+      promo_code: body.promo_code || '',
+      customer_name: body.customer_name,
+      customer_phone: body.customer_phone || '',
+      note: body.note || '',
       payment_method: body.payment_method, payment_status: body.payment_method === 'CASH' ? 'unpaid_cash' : 'pending',
       status: body.payment_method === 'CASH' ? 'dimasak' : 'menunggu_pembayaran',
-      subtotal: subtotal, service_fee: 2000, total: subtotal + 2000, created_at: new Date().toLocaleString('id-ID'),
+      subtotal: subtotal, service_fee: 2000, total: total, created_at: new Date().toLocaleString('id-ID'),
       items: (body.items || []).map(function (it) {
         const m = DEMO_MENU.filter(function (x) { return x.id === Number(it.menu_id); })[0] || { name: 'Menu', price: 0 };
         return { menu_name: m.name, price: m.price, qty: it.qty || 1, level: it.level || '' };
@@ -92,7 +109,9 @@ function demoPost(body) {
     };
     return Promise.resolve({ order: order, demo: true });
   }
-  if (body.action === 'payOrder') return Promise.reject(new Error('Mode pratinjau: hubungkan GAS_API_URL terlebih dahulu untuk simulasi pembayaran.'));
+  if (body.action === 'payOrder') {
+    return Promise.resolve({ order: { code: body.code, payment_status: 'paid', status: 'dimasak' } });
+  }
   if (body.action === 'adminUpdateSettings') return Promise.reject(new Error('Mode pratinjau: hubungkan GAS_API_URL terlebih dahulu untuk menyimpan pengaturan.'));
   return Promise.reject(new Error('Mode pratinjau: mohon isi GAS_API_URL di config.js'));
 }

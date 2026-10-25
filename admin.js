@@ -77,19 +77,27 @@ async function loadOrders() {
     const slice = list.slice((ordersPage - 1) * ORDERS_PER_PAGE, ordersPage * ORDERS_PER_PAGE);
     slice.forEach((o) => {
       const d = document.createElement('div'); d.className = 'order-card';
-      const itemsTxt = (o.items || []).map((i) => esc(i.qty) + ' x ' + esc(i.menu_name) + ' ' + esc(i.level || '')).join(', ');
+      const itemsTxt = (o.items || []).map((i) => esc(i.qty) + 'x ' + esc(i.menu_name) + (i.level ? ' [' + esc(i.level) + ']' : '')).join(', ');
+      const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+      const modeBadge = isDineIn
+        ? `<span class="badge" style="background:#e8f4ec;color:#2e7d4f">🍽️ DINE-IN ${o.table_no ? '(Meja ' + esc(o.table_no) + ')' : ''}</span>`
+        : `<span class="badge" style="background:#f4ecda;color:#8f6b1d">🛍️ TAKEAWAY</span>`;
+      const discTxt = Number(o.discount) > 0 ? ` • Diskon: -${rp(o.discount)}` : '';
+
       d.innerHTML = `<div class="row" style="justify-content:space-between">
-        <b style="font-size:16px">${esc(o.code)}</b>
+        <div class="row" style="gap:8px"><b style="font-size:16px">${esc(o.code)}</b> ${modeBadge}</div>
         <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${esc(o.payment_status)} • ${esc(ST_LABEL[o.status] || o.status)}</span></div>
-      <div class="meta">${esc(o.queue_no || '')} • ${esc(o.customer_name)} (${esc(o.customer_phone)}) • ${esc(o.payment_method)} • <b>${rp(o.total)}</b> • ${esc(o.created_at || '')}</div>
-      <div class="meta">${itemsTxt}${o.note ? ' • Catatan: ' + esc(o.note) : ''}</div>
-      <div class="row" style="margin-top:8px">
+      <div class="meta" style="margin-top:4px">${esc(o.queue_no || '')} • <b>${esc(o.customer_name)}</b> (${esc(o.customer_phone || '-')}) • ${esc(o.payment_method)} • <b>${rp(o.total)}</b>${discTxt} • ${esc(o.created_at || '')}</div>
+      <div class="meta" style="font-weight:600;color:#2e2a23">${itemsTxt}${o.note ? ' • Catatan: <span style="color:#b97900">' + esc(o.note) + '</span>' : ''}</div>
+      <div class="row" style="margin-top:10px">
       <button class="btn sm" data-act="dimasak" data-id="${o.id}">Proses Masak</button>
-      <button class="btn sm" data-act="siap_diambil" data-id="${o.id}">Siap Diambil</button>
+      <button class="btn sm" data-act="siap_diambil" data-id="${o.id}">Siap Disajikan</button>
       <button class="btn sm green" data-act="selesai" data-id="${o.id}">Selesaikan</button>
       <button class="btn sm ghost" data-act="dibatalkan" data-id="${o.id}">Batalkan</button>
       <button class="btn sm ghost" data-pay="paid" data-id="${o.id}">Tandai Lunas</button>
-      <button class="btn sm ghost" data-print="${o.id}">Struk</button></div>`;
+      <button class="btn sm ghost" data-print="${o.id}">🖨️ Struk POS</button>
+      ${o.customer_phone ? `<button class="btn sm ghost" data-chat="${o.id}">💬 Chat WA</button>` : ''}
+      </div>`;
       box.appendChild(d);
     });
     const nav = document.createElement('div');
@@ -104,23 +112,68 @@ async function loadOrders() {
     box.querySelectorAll('button[data-act]').forEach((b) => b.onclick = () => setSt(Number(b.dataset.id), b.dataset.act));
     box.querySelectorAll('button[data-pay]').forEach((b) => b.onclick = () => setPay(Number(b.dataset.id), b.dataset.pay));
     box.querySelectorAll('button[data-print]').forEach((b) => b.onclick = () => printOrderStruk(Number(b.dataset.print)));
+    box.querySelectorAll('button[data-chat]').forEach((b) => b.onclick = () => chatWA(Number(b.dataset.chat)));
   } catch (e) { box.innerHTML = '<div class="warn">' + esc(e.message) + '</div>'; }
 }
-function exportOrdersCSV() {
-  if (!ORDERS_CACHE.length) { alert('Belum ada data untuk diekspor.'); return; }
-  const head = ['id', 'code', 'queue_no', 'customer_name', 'customer_phone', 'payment_method', 'payment_status', 'status', 'total', 'created_at'];
-  const lines = [head.join(';')].concat(ORDERS_CACHE.map((o) => head.map((k) => `"${String(o[k] ?? '').replace(/"/g, '""')}"`).join(';')));
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pesanan-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+
+function chatWA(id) {
+  const o = ORDERS_CACHE.find((x) => Number(x.id) === Number(id));
+  if (!o || !o.customer_phone) return;
+  let hp = String(o.customer_phone).replace(/\D/g, '');
+  if (hp.startsWith('0')) hp = '62' + hp.slice(1);
+  const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+  const store = document.title.replace(/^Admin — /, '') || 'Toko Kami';
+  const txt = `Halo Kak ${o.customer_name}, kami dari ${store}.\nMengenai pesanan ${o.code} (${o.queue_no || '-'}) ${isDineIn ? 'Meja ' + (o.table_no || '') : 'Takeaway'}: status pesanan Anda saat ini adalah "${ST_LABEL[o.status] || o.status}". Terima kasih!`;
+  window.open(`https://wa.me/${hp}?text=${encodeURIComponent(txt)}`, '_blank');
 }
+
 function printOrderStruk(id) {
   const o = ORDERS_CACHE.find((x) => Number(x.id) === Number(id));
   if (!o) return;
-  const w = window.open('', '_blank', 'width=320,height=600');
+  const w = window.open('', '_blank', 'width=380,height=650');
   if (!w) return;
-  const rows = (o.items || []).map((i) => `${esc(i.qty)}x ${esc(i.menu_name)} — Rp${(i.price * i.qty).toLocaleString('id-ID')}`).join('<br>');
-  w.document.write(`<html><head><title>Struk ${esc(o.code)}</title><style>body{font-family:monospace;font-size:13px;padding:12px;max-width:58mm}hr{border-top:1px dashed #999}</style></head><body><center><b>${esc(document.title)}</b><br>${esc(o.code)} • ${esc(o.queue_no || '')}</center><hr>${esc(o.customer_name)} (${esc(o.customer_phone)})<br>${esc(o.created_at || '')}<hr>${rows}<hr>Subtotal: Rp${Number(o.subtotal || 0).toLocaleString('id-ID')}<br>Service: Rp${Number(o.service_fee || 0).toLocaleString('id-ID')}<br><b>Total: Rp${Number(o.total || 0).toLocaleString('id-ID')}</b><br>${esc(o.payment_method)} • ${esc(o.payment_status)}<hr><center>Terima kasih</center><script>window.print()<\/script></body></html>`);
+  const store = esc(document.title.replace(/^Admin — /, '') || 'UMKM Mandiri');
+  const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+  const tipe = isDineIn ? `DINE-IN ${o.table_no ? '(MEJA ' + esc(o.table_no) + ')' : ''}` : 'TAKEAWAY';
+  const rows = (o.items || []).map((i) => `
+    <tr>
+      <td style="padding:3px 0">${esc(i.qty)}x ${esc(i.menu_name)}${i.level ? '<br><small style="color:#666">*' + esc(i.level) + '</small>' : ''}</td>
+      <td style="text-align:right;white-space:nowrap;vertical-align:top">Rp${(i.price * i.qty).toLocaleString('id-ID')}</td>
+    </tr>`).join('');
+  const discRow = Number(o.discount) > 0 ? `<tr><td>Diskon Promo</td><td style="text-align:right">-Rp${Number(o.discount).toLocaleString('id-ID')}</td></tr>` : '';
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(o.code);
+
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Struk ${esc(o.code)}</title>
+  <style>
+    @page{margin:0}
+    body{font-family:'Courier New',Courier,monospace;font-size:12px;color:#000;padding:12px;max-width:72mm;margin:0 auto}
+    .c{text-align:center}
+    .r{text-align:right}
+    .b{font-weight:bold}
+    .line{border-top:1px dashed #444;margin:8px 0}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+  </style></head><body>
+  <div class="c"><b style="font-size:15px">${store}</b><br><span class="b" style="font-size:13px">${tipe}</span><br>${esc(o.code)} • ${esc(o.queue_no || '')}</div>
+  <div class="line"></div>
+  <div>Tgl : ${esc(o.created_at || '')}<br>Plg : ${esc(o.customer_name)} (${esc(o.customer_phone || '-')})</div>
+  ${o.note ? `<div>Cat : ${esc(o.note)}</div>` : ''}
+  <div class="line"></div>
+  <table>${rows}</table>
+  <div class="line"></div>
+  <table>
+    <tr><td>Subtotal</td><td class="r">Rp${Number(o.subtotal || 0).toLocaleString('id-ID')}</td></tr>
+    ${discRow}
+    <tr><td>Biaya Layanan</td><td class="r">Rp${Number(o.service_fee || 0).toLocaleString('id-ID')}</td></tr>
+    <tr class="b" style="font-size:14px"><td>TOTAL</td><td class="r">Rp${Number(o.total || 0).toLocaleString('id-ID')}</td></tr>
+    <tr><td>Metode</td><td class="r">${esc(o.payment_method)} (${esc(o.payment_status).toUpperCase()})</td></tr>
+  </table>
+  <div class="line"></div>
+  <div class="c" style="margin-top:8px">
+    <img src="${qrUrl}" width="90" height="90" alt="QR"><br>
+    <small>Simpan struk ini sebagai bukti pembayaran.<br>Terima kasih atas kunjungan Anda!</small>
+  </div>
+  <script>window.print();<\/script>
+  </body></html>`);
   w.document.close();
 }
 let LAPORAN_CACHE = null;
@@ -261,6 +314,8 @@ async function loadSettings() {
     document.getElementById('sbuka').value = s.jam_buka || '';
     document.getElementById('stup').value = s.jam_tutup || '';
     document.getElementById('sbatas').value = s.batas_bayar_menit || 15;
+    const sp = document.getElementById('spromos');
+    if (sp) sp.value = s.promo_codes || '';
     document.getElementById('swa_on').value = s.wa_enabled === '1' ? 1 : 0;
     document.getElementById('swa_admin').value = s.wa_admin || '';
     document.getElementById('swa_token').value = s.wa_token || '';
@@ -285,6 +340,7 @@ async function saveSettings() {
     jam_buka: document.getElementById('sbuka').value,
     jam_tutup: document.getElementById('stup').value,
     batas_bayar_menit: document.getElementById('sbatas').value,
+    promo_codes: document.getElementById('spromos') ? document.getElementById('spromos').value.trim() : '',
     wa_enabled: document.getElementById('swa_on').value,
     wa_admin: document.getElementById('swa_admin').value,
     wa_token: document.getElementById('swa_token').value,

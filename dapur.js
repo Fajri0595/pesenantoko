@@ -34,17 +34,34 @@ function bip(kali) {
     o.start(t); o.stop(t + 0.32);
   }
 }
+let dapurFilter = 'all';
+
+function setDapurFilter(flt) {
+  dapurFilter = flt;
+  document.getElementById('dFltAll')?.classList.toggle('on', flt === 'all');
+  document.getElementById('dFltDI')?.classList.toggle('on', flt === 'dine_in');
+  document.getElementById('dFltTA')?.classList.toggle('on', flt === 'takeaway');
+  poll(true);
+}
+
 function panggilById(id) {
   const o = DAPUR_CACHE.find((x) => Number(x.id) === Number(id));
   if (!o) return;
-  panggil(o.queue_no || '', o.customer_name || '');
+  const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+  panggil(o.queue_no || '', o.customer_name || '', isDineIn, o.table_no || '');
 }
-function panggil(queue, nama) {
+function panggil(queue, nama, isDineIn, tableNo) {
   bip(2);
   try {
     const q = String(queue || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 20);
     const n = String(nama || '').replace(/[<>"']/g, '').slice(0, 40);
-    const u = new SpeechSynthesisUtterance('Nomor antrean ' + q + ', pesanan atas nama ' + n + ', telah siap dan dapat diambil di counter. Terima kasih.');
+    let text = '';
+    if (isDineIn) {
+      text = 'Pesanan ' + (tableNo ? 'Meja ' + tableNo : 'Dine In') + ', atas nama ' + n + ', telah siap disajikan. Selamat menikmati.';
+    } else {
+      text = 'Nomor antrean ' + q + ', pesanan atas nama ' + n + ', telah siap dan dapat diambil di counter. Terima kasih.';
+    }
+    const u = new SpeechSynthesisUtterance(text);
     u.lang = 'id-ID';
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   } catch (e) { /* abaikan */ }
@@ -58,7 +75,7 @@ function elapsed(dibuat) {
   const m = elapsedMin(dibuat);
   return m < 60 ? m + ' mnt' : Math.floor(m / 60) + ' jam ' + (m % 60) + ' mnt';
 }
-function slaClass(mnt) { return mnt >= 30 ? 'bad' : (mnt >= 15 ? 'warn' : ''); }
+function slaClass(mnt) { return mnt >= 25 ? 'bad' : (mnt >= 12 ? 'warn' : ''); }
 let cariT = null;
 function cariDapur() { clearTimeout(cariT); cariT = setTimeout(() => poll(true), 400); }
 async function poll(manual) {
@@ -76,12 +93,21 @@ async function poll(manual) {
     const q = ((document.getElementById('dq') && document.getElementById('dq').value) || '').toLowerCase();
     let masak = rows.filter((o) => o.status === 'dimasak');
     let siap = rows.filter((o) => o.status === 'siap_diambil');
+
+    if (dapurFilter === 'dine_in') {
+      const isDI = (o) => o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+      masak = masak.filter(isDI); siap = siap.filter(isDI);
+    } else if (dapurFilter === 'takeaway') {
+      const isTA = (o) => o.order_type !== 'dine_in' && !/^DI-/i.test(o.queue_no || '');
+      masak = masak.filter(isTA); siap = siap.filter(isTA);
+    }
+
     if (q) {
-      const flt = (o) => [o.code, o.customer_name, o.queue_no].join(' ').toLowerCase().includes(q);
+      const flt = (o) => [o.code, o.customer_name, o.queue_no, o.table_no].join(' ').toLowerCase().includes(q);
       masak = masak.filter(flt); siap = siap.filter(flt);
     }
-    masak.sort((a, b) => elapsedMin(a.created_at) - elapsedMin(b.created_at));
-    siap.sort((a, b) => elapsedMin(a.created_at) - elapsedMin(b.created_at));
+    masak.sort((a, b) => elapsedMin(b.created_at) - elapsedMin(a.created_at));
+    siap.sort((a, b) => elapsedMin(b.created_at) - elapsedMin(a.created_at));
     let baru = 0;
     rows.forEach((o) => {
       if ((o.status === 'dimasak' || o.status === 'siap_diambil') && !kenal[o.id]) { baru++; }
@@ -124,14 +150,24 @@ function gambar(box, list, sudahSiap) {
   list.forEach((o) => {
     const mnt = elapsedMin(o.created_at);
     const sla = slaClass(mnt);
-    const cls = 'antri-card' + (sudahSiap ? ' siap' : '') + (mnt >= 30 ? ' late' : (mnt >= 15 ? ' over' : ''));
+    const cls = 'antri-card' + (sudahSiap ? ' siap' : '') + (mnt >= 25 ? ' late' : (mnt >= 12 ? ' over' : ''));
+    const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+    const badgeType = isDineIn
+      ? `<span class="badge" style="background:#e8f4ec;color:#2e7d4f;font-size:12px;padding:3px 8px">🍽️ MEJA ${escD(o.table_no || '-')}</span>`
+      : `<span class="badge" style="background:#f4ecda;color:#8f6b1d;font-size:12px;padding:3px 8px">🛍️ TAKEAWAY</span>`;
+
     const d = document.createElement('div');
     d.className = cls;
-    d.innerHTML = `<div class="antri-top"><span class="antri-no">${escD(o.queue_no)}</span><span class="sla ${sla}">${escD(elapsed(o.created_at))}</span></div>
-      <div class="antri-meta"><b>${escD(o.code)}</b> • ${escD(o.customer_name)}<br>${escD((o.items || []).map((i) => i.qty + ' x ' + i.menu_name).join(', '))}${o.note ? '<br>Catatan: ' + escD(o.note) : ''}</div>
+    d.innerHTML = `<div class="antri-top">
+        <span class="antri-no">${escD(o.queue_no)}</span>
+        <div class="row" style="gap:6px">${badgeType}<span class="sla ${sla}">${escD(elapsed(o.created_at))} lalu</span></div>
+      </div>
+      <div class="antri-meta"><b>${escD(o.code)}</b> • ${escD(o.customer_name)}<br>
+      <div style="font-size:14px;font-weight:700;margin:4px 0">${escD((o.items || []).map((i) => i.qty + 'x ' + i.menu_name + (i.level ? ' [' + i.level + ']' : '')).join(', '))}</div>
+      ${o.note ? '<div style="color:#b97900;font-weight:600">Catatan: ' + escD(o.note) + '</div>' : ''}</div>
       <div class="row">
-        <button class="btn sm" data-panggil="${o.id}">Panggil Antrean</button>
-        ${sudahSiap ? `<button class="btn sm green" data-selesai="${o.id}">Selesaikan</button>` : `<button class="btn sm green" data-siap="${o.id}">Tandai Siap Diambil</button>`}
+        <button class="btn sm" data-panggil="${o.id}">📢 Panggil</button>
+        ${sudahSiap ? `<button class="btn sm green" data-selesai="${o.id}">✓ Selesaikan</button>` : `<button class="btn sm green" data-siap="${o.id}">✓ Siap Disajikan / Diambil</button>`}
       </div>`;
     box.appendChild(d);
   });
