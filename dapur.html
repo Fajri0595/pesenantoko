@@ -61,28 +61,43 @@
     <!-- ==========================================
          MODE 1: LAYAR ANTREAN TV UNTUK RUANG TUNGGU
          ========================================== -->
-    <div id="viewTV" class="tv-board">
-      <!-- Stepper Alur Proses Pesanan -->
+    <div id="viewTV" class="tv-board" style="display:flex;flex-direction:column">
+      <!-- Stepper Alur Proses Pesanan (Paling Atas) -->
       <div class="tv-stepper">
         <div class="tv-step-item active">
           <div class="tv-step-circle">1</div>
-          <div><span style="font-size:11px">Langkah 1</span><br><b>Pesanan Diterima</b></div>
+          <div class="tv-step-info">
+            <span class="tv-step-lbl">Langkah 1</span>
+            <b class="tv-step-title">Pesanan Diterima</b>
+          </div>
         </div>
+        <div class="tv-step-sep">➔</div>
         <div class="tv-step-item active">
           <div class="tv-step-circle">2</div>
-          <div><span style="font-size:11px">Langkah 2</span><br><b>Sedang Dimasak</b></div>
+          <div class="tv-step-info">
+            <span class="tv-step-lbl">Langkah 2</span>
+            <b class="tv-step-title">Sedang Dimasak</b>
+          </div>
         </div>
+        <div class="tv-step-sep">➔</div>
         <div class="tv-step-item active">
           <div class="tv-step-circle">3</div>
-          <div><span style="font-size:11px">Langkah 3</span><br><b>Siap Diambil di Counter</b></div>
+          <div class="tv-step-info">
+            <span class="tv-step-lbl">Langkah 3</span>
+            <b class="tv-step-title">Siap Diambil di Counter</b>
+          </div>
         </div>
+        <div class="tv-step-sep">➔</div>
         <div class="tv-step-item">
           <div class="tv-step-circle">✓</div>
-          <div><span style="font-size:11px">Langkah 4</span><br><b>Selesai & Dinikmati</b></div>
+          <div class="tv-step-info">
+            <span class="tv-step-lbl">Langkah 4</span>
+            <b class="tv-step-title">Selesai & Dinikmati</b>
+          </div>
         </div>
       </div>
 
-      <!-- Split Screen TV Board -->
+      <!-- Split Screen TV Board (Area Utama Tengah) -->
       <div class="tv-split">
         <!-- Kolom Kiri: Sedang Dimasak -->
         <div class="tv-col tv-col-prep">
@@ -105,9 +120,12 @@
         </div>
       </div>
 
-      <!-- Running Text Marquee Bawah -->
+      <!-- Running Text Marquee Bawah (Melintang Penuh) -->
       <div class="tv-marquee">
-        <span id="tvMarqueeText">Selamat menikmati hidangan spesial kami • Harap menunggu nomor antrean dipanggil • Tunjukkan nomor antrean atau kode pesanan saat pengambilan • Terima kasih atas kunjungan Anda!</span>
+        <div class="tv-marquee-tag">📢 INFO</div>
+        <div class="tv-marquee-track">
+          <span id="tvMarqueeText" class="tv-marquee-text">Selamat menikmati hidangan spesial kami • Harap menunggu nomor antrean dipanggil • Tunjukkan nomor antrean atau kode pesanan saat pengambilan • Terima kasih atas kunjungan Anda!</span>
+        </div>
       </div>
     </div>
 

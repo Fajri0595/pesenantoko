@@ -464,34 +464,56 @@ body.tv .sla{font-size:14px;padding:6px 12px}
    TV ANTREAN & KITCHEN DISPLAY SYSTEM (KDS)
    ============================================================== */
 .tv-wrap {
-  max-width: 1500px;
+  width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 14px 18px 40px;
+  padding: 12px 18px 24px;
+  box-sizing: border-box;
 }
 
-/* TV Process Stepper */
-.tv-stepper {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  background: #fff;
-  border: 1.5px solid var(--line);
-  border-radius: 18px;
-  padding: 14px 18px;
-  box-shadow: var(--shadow);
-  margin-bottom: 16px;
+body.tv-mode-active .tv-wrap {
+  max-width: 100%;
+  padding: 10px 20px 16px;
 }
+
+/* TV Board: Vertical Column Flex Layout */
+.tv-board {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px;
+  width: 100%;
+  min-height: calc(100vh - 90px);
+  box-sizing: border-box;
+}
+
+/* TV Process Stepper: Horizontal Top Bar across full width */
+.tv-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 22px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .tv-step-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-  font-weight: 700;
+  gap: 12px;
   color: var(--muted);
+  flex: 1;
 }
+
 .tv-step-item.active {
   color: var(--brand-d);
 }
+
 .tv-step-circle {
   width: 34px;
   height: 34px;
@@ -499,113 +521,219 @@ body.tv .sla{font-size:14px;padding:6px 12px}
   background: #ece7d9;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   color: #6b6257;
   flex-shrink: 0;
 }
+
 .tv-step-item.active .tv-step-circle {
   background: var(--brand);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(62, 107, 79, 0.3);
+  box-shadow: 0 3px 10px rgba(62, 107, 79, 0.3);
 }
 
-/* TV Board Split Screen */
+.tv-step-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.tv-step-lbl {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8c8273;
+  font-weight: 700;
+}
+
+.tv-step-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.tv-step-sep {
+  color: #d1c8b9;
+  font-size: 15px;
+  font-weight: 900;
+  user-select: none;
+  padding: 0 4px;
+}
+
+@media (max-width: 900px) {
+  .tv-stepper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+  .tv-step-sep {
+    display: none;
+  }
+}
+
+/* TV Split Screen: Takes up remaining vertical space */
 .tv-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  min-height: 580px;
+  gap: 18px;
+  flex: 1;
+  min-height: 520px;
+  width: 100%;
+  box-sizing: border-box;
 }
+
 @media (max-width: 860px) {
-  .tv-split { grid-template-columns: 1fr; }
-  .tv-stepper { grid-template-columns: 1fr 1fr; }
+  .tv-split {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
 }
+
 .tv-col {
   background: var(--card);
   border: 2px solid var(--line);
-  border-radius: 24px;
-  padding: 22px;
+  border-radius: 20px;
+  padding: 18px 22px;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
+
 .tv-col-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   border-bottom: 2px solid var(--line);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
+
 .tv-col-head h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: 0.5px;
 }
+
 .tv-col-prep {
-  border-color: #dfbf74;
-  background: linear-gradient(180deg, #fdfaf2 0%, #fff 100%);
+  border-color: #e5cb8b;
+  background: linear-gradient(180deg, #fdfaf2 0%, #ffffff 100%);
 }
 .tv-col-prep h2 { color: #8a6a1a; }
+
 .tv-col-ready {
   border-color: #8ed0a8;
-  background: linear-gradient(180deg, #f2faf4 0%, #fff 100%);
+  background: linear-gradient(180deg, #f2faf4 0%, #ffffff 100%);
 }
 .tv-col-ready h2 { color: #1e5234; }
+
 .tv-badge-count {
   font-size: 18px;
-  font-weight: 800;
-  padding: 5px 14px;
+  font-weight: 900;
+  padding: 4px 14px;
   border-radius: 999px;
   background: #fff;
-  border: 1.5px solid var(--line);
+  border: 2px solid currentColor;
 }
+.tv-col-prep .tv-badge-count { color: #8a6a1a; }
+.tv-col-ready .tv-badge-count { color: #1e5234; }
+
 .tv-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 14px;
-  overflow: auto;
+  overflow-y: auto;
   align-content: start;
   flex: 1;
+  padding: 4px 2px;
+  box-sizing: border-box;
 }
+
+/* Empty State inside TV columns */
+.tv-empty-box {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 16px;
+  color: #8c8273;
+  margin: auto 0;
+}
+.tv-empty-icon {
+  font-size: 46px;
+  margin-bottom: 12px;
+  opacity: 0.85;
+}
+.tv-empty-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #554e43;
+  margin-bottom: 6px;
+}
+.tv-empty-sub {
+  font-size: 14px;
+  color: #8c8273;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* Individual Queue Card */
 .tv-card {
   background: #fff;
   border: 2px solid var(--line);
-  border-radius: 18px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 16px 12px;
   text-align: center;
-  box-shadow: var(--shadow);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 .tv-card-no {
-  font-size: 40px;
+  font-size: 38px;
   font-weight: 900;
-  letter-spacing: 1px;
-  line-height: 1;
+  letter-spacing: 1.5px;
+  line-height: 1.1;
   color: var(--ink);
   margin: 6px 0;
   font-variant-numeric: tabular-nums;
 }
-.tv-card.prep .tv-card-no { color: #8a6a1a; }
-.tv-card.ready {
-  border-color: var(--green);
-  box-shadow: 0 6px 20px rgba(46, 125, 79, 0.22);
+.tv-card.prep {
+  border-color: #dfbf74;
 }
-.tv-card.ready .tv-card-no { color: var(--green); }
+.tv-card.prep .tv-card-no {
+  color: #8a6a1a;
+}
+.tv-card.ready {
+  border-color: #4ade80;
+  background: #fcfdfc;
+  box-shadow: 0 6px 20px rgba(46, 125, 79, 0.18);
+}
+.tv-card.ready .tv-card-no {
+  color: var(--green);
+}
 .tv-card.calling {
-  border-color: #d97706;
+  border-color: #f59e0b;
   background: #fffbe8;
   animation: pulse-calling 1s infinite alternate;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.35);
 }
 .tv-card-name {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
-  color: #666;
+  color: #554e43;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -614,11 +742,13 @@ body.tv .sla{font-size:14px;padding:6px 12px}
   display: inline-block;
   font-size: 11px;
   font-weight: 800;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
+
 .tv-call-banner {
   position: fixed;
   top: 24px;
@@ -655,17 +785,53 @@ body.tv .sla{font-size:14px;padding:6px 12px}
   font-weight: 700;
   opacity: 0.95;
 }
+
+/* TV Running Text Marquee: Bottom Footer across full width */
 .tv-marquee {
   background: var(--brand-d);
   color: #f7eedc;
-  padding: 11px 18px;
-  border-radius: 14px;
-  font-size: 14.5px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.tv-marquee-tag {
+  background: #ffd066;
+  color: #1b3d27;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.tv-marquee-track {
   overflow: hidden;
   white-space: nowrap;
-  margin-top: 16px;
-  box-shadow: var(--shadow);
+  flex: 1;
+  position: relative;
+}
+.tv-marquee-text {
+  display: inline-block;
+  padding-left: 100%;
+  animation: tv-ticker-scroll 35s linear infinite;
+  white-space: nowrap;
+}
+.tv-marquee:hover .tv-marquee-text {
+  animation-play-state: paused;
+}
+@keyframes tv-ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
 }
 
 /* KDS Kitchen 3-Column Kanban */

@@ -14,7 +14,10 @@ function setDisplayMode(mode) {
   document.getElementById('btnModeKDS')?.classList.toggle('on', mode === 'kds');
   const viewTV = document.getElementById('viewTV');
   const viewKDS = document.getElementById('viewKDS');
-  if (viewTV) viewTV.style.display = mode === 'tv' ? 'flex' : 'none';
+  if (viewTV) {
+    viewTV.style.display = mode === 'tv' ? 'flex' : 'none';
+    viewTV.style.flexDirection = 'column';
+  }
   if (viewKDS) viewKDS.style.display = mode === 'kds' ? 'block' : 'none';
   document.body.classList.toggle('tv-mode-active', mode === 'tv');
   renderCurrentView();
@@ -242,7 +245,12 @@ function renderTVBoard(masak, siap) {
 
   if (boxPrep) {
     if (!masak.length) {
-      boxPrep.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:40px 10px;font-size:16px">Semua pesanan telah selesai disiapkan ✨</div>';
+      boxPrep.innerHTML = `
+        <div class="tv-empty-box">
+          <div class="tv-empty-icon">🍳</div>
+          <div class="tv-empty-title">Semua Pesanan Telah Disiapkan</div>
+          <div class="tv-empty-sub">Belum ada antrean yang sedang dimasak saat ini ✨</div>
+        </div>`;
     } else {
       boxPrep.innerHTML = masak.map((o) => {
         const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
@@ -259,7 +267,12 @@ function renderTVBoard(masak, siap) {
 
   if (boxReady) {
     if (!siap.length) {
-      boxReady.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:40px 10px;font-size:16px">Belum ada antrean yang menunggu diambil.</div>';
+      boxReady.innerHTML = `
+        <div class="tv-empty-box">
+          <div class="tv-empty-icon">🔔</div>
+          <div class="tv-empty-title">Belum Ada Antrean Siap</div>
+          <div class="tv-empty-sub">Nomor antrean yang siap diambil akan otomatis tampil di sini</div>
+        </div>`;
     } else {
       boxReady.innerHTML = siap.map((o) => {
         const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
