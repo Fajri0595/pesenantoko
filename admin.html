@@ -27,7 +27,7 @@
       <button class="btn sm ghost" onclick="tab('menu')">Katalog Menu</button>
       <button class="btn sm ghost" onclick="tab('laporan')">Laporan Penjualan</button>
       <button class="btn sm ghost" onclick="tab('setting')">Pengaturan Toko</button>
-      <select id="fstat" onchange="loadOrders()" style="margin-left:auto;max-width:220px" aria-label="Filter status">
+      <select id="fstat" onchange="ordersPage = 1; loadOrders()" style="margin-left:auto;max-width:220px" aria-label="Filter status">
         <option value="">Semua Status</option>
         <option value="menunggu_pembayaran">Menunggu Pembayaran</option>
         <option value="dimasak">Sedang Dimasak</option>
@@ -37,6 +37,7 @@
         <option value="kedaluwarsa">Kedaluwarsa</option>
       </select>
       <input id="fq" type="text" placeholder="Cari kode / nama / HP..." style="max-width:220px" oninput="loadOrdersDebounced()">
+      <button class="btn sm" onclick="loadOrders();loadStats()">🔄 Refresh</button>
       <button class="btn sm ghost" onclick="exportOrdersCSV()">Export CSV</button>
     </div>
     <div id="vOrders"></div>

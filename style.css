@@ -267,8 +267,12 @@ body.lock{overflow:hidden}
 .sla.bad{background:#f6dcd4;color:#8f3a2a}
 /* TV mode dapur */
 body.tv .wrap{max-width:1400px}
-body.tv .antri-no{font-size:44px}
-body.tv .antri-card{padding:20px}
+body.tv .antri-no{font-size:46px}
+body.tv .antri-card{padding:22px;border-width:2px}
+body.tv .antri-meta{font-size:16px;line-height:1.7}
+body.tv .antri-meta div{font-size:18px !important;font-weight:800}
+body.tv .dapur-col h2{font-size:24px}
+body.tv .sla{font-size:14px;padding:6px 12px}
 
 /* --- Fitur Profesional Baru: Dine-in, Promo, Chips & Struk Thermal --- */
 .table-notice{background:linear-gradient(135deg,#eaf5ee,#d8ede0);border:1.5px solid #2e7d4f;color:#1e5234;padding:12px 18px;border-radius:14px;font-size:14px;margin:12px 0;box-shadow:var(--shadow)}

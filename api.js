@@ -65,7 +65,7 @@ function demoGet(action, params) {
   if (action === 'settings') return Promise.resolve({
     store_name: 'UMKM MANDIRI', tagline: 'KULINER SPESIAL • TAKEAWAY & DINE-IN',
     service_fee: 2000, estimasi: '15–20 menit', payments: DEMO_PAYMENTS,
-    promo_codes: 'DISKON10,HEMAT5K,MAKANENAK',
+    promo_codes: 'DISKON10:10%:15000,HEMAT5K:5000:25000,MAKANENAK:15%:20000',
   });
   if (action === 'kategori') return Promise.resolve(['Dimsum', 'Mie', 'Minuman']);
   if (action === 'menu') {

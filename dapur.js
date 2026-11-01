@@ -16,9 +16,17 @@ async function pair() {
 function keluar() { localStorage.removeItem('admin_token'); location.reload(); }
 function toggleTV() { document.body.classList.toggle('tv'); }
 function aktifkanSuara() {
-  try { ctxSuara = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* abaikan */ }
+  try {
+    if (!ctxSuara) ctxSuara = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctxSuara && ctxSuara.state === 'suspended') ctxSuara.resume();
+  } catch (e) { /* abaikan */ }
   suara = true;
-  document.getElementById('btnSound').textContent = 'Notifikasi Suara Aktif';
+  const btn = document.getElementById('btnSound');
+  if (btn) {
+    btn.textContent = '✓ Bel Suara Aktif';
+    btn.style.borderColor = 'var(--brand)';
+    btn.style.color = 'var(--brand)';
+  }
   bip(2);
 }
 function bip(kali) {

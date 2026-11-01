@@ -69,6 +69,7 @@ function applySettings(s) {
   if (s.jam_buka) SETTINGS.jam_buka = String(s.jam_buka);
   if (s.jam_tutup) SETTINGS.jam_tutup = String(s.jam_tutup);
   if (s.buka !== undefined) SETTINGS.buka = !!s.buka;
+  if (s.promo_codes) SETTINGS.promo_codes = String(s.promo_codes);
   const tw = $('tutupWarn');
   if (tw) {
     if (SETTINGS.buka === false) {
@@ -120,15 +121,37 @@ function setOrderMode(mode) {
   if (coB) coB.textContent = mode === 'dine_in' ? 'Dine-In' : 'Takeaway';
   const coTF = $('coTableField');
   if (coTF) coTF.style.display = mode === 'dine_in' ? 'block' : 'none';
+  const notice = $('tableNotice');
+  if (notice) {
+    if (mode === 'takeaway') notice.style.display = 'none';
+    else if (currentTableNo) {
+      notice.style.display = 'block';
+      notice.innerHTML = `🍽️ <b>Mode Meja ${esc(currentTableNo)} Aktif:</b> Anda memesan langsung untuk Makan di Tempat (Dine-In).`;
+    }
+  }
   renderCart();
 }
 
 function parsePromos() {
-  const map = {
-    DISKON10: { code: 'DISKON10', type: 'percent', val: 10, max: 15000, desc: 'Diskon 10% (Maks Rp15.000)' },
-    HEMAT5K: { code: 'HEMAT5K', type: 'nominal', val: 5000, min: 25000, desc: 'Potongan Rp5.000 (Min. Rp25.000)' },
-    MAKANENAK: { code: 'MAKANENAK', type: 'percent', val: 15, max: 20000, desc: 'Diskon 15% (Maks Rp20.000)' },
-  };
+  const str = String(SETTINGS.promo_codes || 'DISKON10:10%:15000,HEMAT5K:5000:25000,MAKANENAK:15%:20000').trim();
+  const map = {};
+  str.split(',').forEach((part) => {
+    const segs = part.trim().split(':');
+    if (!segs[0]) return;
+    const code = segs[0].toUpperCase();
+    const valStr = (segs[1] || '').trim();
+    if (valStr.includes('%')) {
+      const pct = parseInt(valStr.replace('%', ''), 10) || 0;
+      const maxDisc = parseInt(segs[2], 10) || 0;
+      const desc = `Diskon ${pct}%` + (maxDisc ? ` (Maks ${rp(maxDisc)})` : '');
+      map[code] = { code, type: 'percent', val: pct, max: maxDisc, min: 0, desc };
+    } else {
+      const nom = parseInt(valStr, 10) || 0;
+      const minSub = parseInt(segs[2], 10) || 0;
+      const desc = `Potongan ${rp(nom)}` + (minSub ? ` (Min. Belanja ${rp(minSub)})` : '');
+      map[code] = { code, type: 'nominal', val: nom, max: 0, min: minSub, desc };
+    }
+  });
   return map;
 }
 
@@ -259,6 +282,17 @@ function renderCart() {
   if (!CART.length) box.innerHTML = '<div class="empty">Keranjang Anda masih kosong.<br>Silakan pilih menu favorit Anda terlebih dahulu.</div>';
 
   const disc = calcPromoDiscount(sub);
+  const fb = $('promoFeedback');
+  if (appliedPromo && fb) {
+    if (appliedPromo.min && sub < appliedPromo.min) {
+      fb.innerHTML = `<span style="color:#b97900">Kurang ${rp(appliedPromo.min - sub)} untuk promo ${esc(appliedPromo.code)}</span>`;
+    } else {
+      fb.innerHTML = `<span style="color:var(--green)">✓ Kupon aktif: ${esc(appliedPromo.desc)}</span>`;
+    }
+  } else if (!appliedPromo && fb && !($('promoCode')?.value.trim())) {
+    fb.innerHTML = '';
+  }
+
   const rowPromo = $('rowPromo');
   if (rowPromo) {
     if (disc > 0 && appliedPromo) {
@@ -417,10 +451,25 @@ const PAY_STEPS = {
   DANA: ['Buka aplikasi DANA', 'Pilih Kirim ke nomor tujuan di atas', 'Masukkan nominal tepat sesuai tagihan', 'Konfirmasi dengan PIN DANA Anda'],
   CASH: ['Tunjukkan kode pesanan di counter', 'Bayar tunai sesuai nominal', 'Simpan struk sebagai bukti'],
 };
+function updateUnpaidNotice() {
+  const el = $('unpaidNotice');
+  if (!el) return;
+  if (showBayarRef && showBayarRef.payment_status !== 'paid' && !['selesai', 'dibatalkan', 'kedaluwarsa'].includes(showBayarRef.status)) {
+    el.style.display = 'block';
+    el.innerHTML = `⚠️ <b>Pesanan Anda ${esc(showBayarRef.code)} (${rp(showBayarRef.total)}) menunggu pembayaran.</b> Klik di sini untuk melanjutkan pembayaran.`;
+  } else {
+    el.style.display = 'none';
+  }
+}
+function reopenUnpaid() {
+  if (showBayarRef) showBayar(showBayarRef);
+}
+
 function showBayar(o) {
   if (!o || !o.code) { toast('Data pembayaran tidak valid'); return; }
   stopPayTimer();
   showBayarRef = o;
+  const un = $('unpaidNotice'); if (un) un.style.display = 'none';
   const label = payLabelOf(o.payment_method);
   $('bTitle').textContent = `Pembayaran ${label} — ${rp(o.total)}`;
   const ref = payRef(o.code, o.payment_method);
@@ -445,7 +494,7 @@ function showBayar(o) {
       <div style="font-size:16px;font-weight:800;margin-top:8px">${rp(o.total)}</div>
       <small>Mode simulasi — tidak ada dana aktual yang berpindah</small></div>
     <div style="margin-top:10px">${steps}</div>
-    <div class="row" style="margin-top:10px"><button class="btn ghost" onclick="stopPayTimer();closeM('mBayar')">Bayar Nanti</button>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" onclick="stopPayTimer();closeM('mBayar');updateUnpaidNotice()">Bayar Nanti</button>
     <button id="btnPay" class="btn green" data-pay-code="${safeCode}">Saya Sudah Membayar</button></div>`;
   const btnPay = $('btnPay');
   if (btnPay) btnPay.onclick = () => simPay(o.code);
@@ -459,6 +508,7 @@ function showBayar(o) {
       const b = $('btnPay');
       if (b) { b.disabled = true; b.textContent = 'Telah Kedaluwarsa'; }
       toast('Waktu pembayaran telah berakhir — silakan buat pesanan baru');
+      updateUnpaidNotice();
     }
   };
   tick();
@@ -470,7 +520,12 @@ async function simPay(code) {
   await new Promise((r) => setTimeout(r, 1800));
   try {
     const j = await apiPost({ action: 'payOrder', code });
-    stopPayTimer(); closeM('mBayar'); showStruk(j.order); toast('Pembayaran berhasil dikonfirmasi. Terima kasih.');
+    stopPayTimer();
+    closeM('mBayar');
+    showBayarRef = null;
+    updateUnpaidNotice();
+    showStruk(j.order);
+    toast('Pembayaran berhasil dikonfirmasi. Terima kasih.');
   } catch (e) { b.disabled = false; b.textContent = 'Saya Sudah Membayar'; toast(e.message); }
 }
 function showStruk(o) {
@@ -655,5 +710,22 @@ function renderRiwayat() {
     const hp = $('hp'); if (hp) hp.addEventListener('input', () => { hp.value = hp.value.replace(/[^\d+\s-]/g, ''); });
   });
 })();
-document.querySelectorAll('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) { m.classList.remove('open'); if (m.id === 'mBayar') stopPayTimer(); } }));
+document.querySelectorAll('.modal').forEach((m) => m.addEventListener('click', (e) => {
+  if (e.target === m) {
+    m.classList.remove('open');
+    if (m.id === 'mBayar') {
+      stopPayTimer();
+      updateUnpaidNotice();
+    }
+  }
+}));
+
+// Hemat kuota & baterai: jeda polling pelacakan saat tab tidak aktif
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopLacakTimer();
+  } else if (lastLacak && !['selesai', 'dibatalkan', 'kedaluwarsa'].includes(lastLacak.status)) {
+    lacak(true);
+  }
+});
 init();

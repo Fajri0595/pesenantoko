@@ -9,6 +9,17 @@ let ordersPage = 1; const ORDERS_PER_PAGE = 20;
 let ordersDebounce = null;
 function loadOrdersDebounced() { clearTimeout(ordersDebounce); ordersDebounce = setTimeout(() => { ordersPage = 1; loadOrders(); }, 300); }
 
+let adminAutoRefreshTimer = null;
+function startAdminAutoRefresh() {
+  if (adminAutoRefreshTimer) clearInterval(adminAutoRefreshTimer);
+  adminAutoRefreshTimer = setInterval(() => {
+    if (token() && document.getElementById('vOrders') && document.getElementById('vOrders').style.display !== 'none') {
+      loadOrders(false, true);
+      loadStats();
+    }
+  }, 20000);
+}
+
 async function me() {
   if (!isConfigured()) document.getElementById('cfgWarn').style.display = 'block';
   applyBrand();
@@ -17,6 +28,7 @@ async function me() {
     document.getElementById('main').style.display = 'block';
     document.getElementById('btnOut').style.display = 'inline';
     loadStats(); loadOrders(); loadMenu();
+    startAdminAutoRefresh();
   }
 }
 // Nama toko di header admin mengikuti Settings (tanpa login)
@@ -60,11 +72,12 @@ async function loadStats() {
     document.getElementById('stats').innerHTML = '<div class="warn">Ringkasan belum dapat dimuat: ' + e.message + '</div>';
   }
 }
-async function loadOrders() {
+async function loadOrders(resetPage, silent) {
+  if (resetPage) ordersPage = 1;
   const f = document.getElementById('fstat').value;
   const q = ((document.getElementById('fq') && document.getElementById('fq').value) || '').toLowerCase().trim();
   const box = document.getElementById('vOrders');
-  box.innerHTML = '<p class="muted">Memuat data pesanan...</p>';
+  if (!silent) box.innerHTML = '<p class="muted">Memuat data pesanan...</p>';
   try {
     const rows = await apiGet('adminOrders', Object.assign({ token: token() }, f ? { status: f } : {}));
     ORDERS_CACHE = rows;
@@ -73,7 +86,7 @@ async function loadOrders() {
     box.innerHTML = '';
     if (!list.length) { box.innerHTML = '<div class="empty">Belum ada pesanan pada filter ini.</div>'; return; }
     const totalPage = Math.max(1, Math.ceil(list.length / ORDERS_PER_PAGE));
-    ordersPage = Math.min(ordersPage, totalPage);
+    ordersPage = Math.max(1, Math.min(ordersPage, totalPage));
     const slice = list.slice((ordersPage - 1) * ORDERS_PER_PAGE, ordersPage * ORDERS_PER_PAGE);
     slice.forEach((o) => {
       const d = document.createElement('div'); d.className = 'order-card';
@@ -238,6 +251,43 @@ function renderLapDoc(L, nama) {
     <div class="lap-sign"><span>Dicetak oleh Admin<br><br><br>( ........................ )</span><span>Mengetahui, Pemilik Toko<br><br><br>( ........................ )</span></div>
   </div>`;
 }
+function exportOrdersCSV() {
+  const rows = ORDERS_CACHE;
+  if (!rows || !rows.length) {
+    alert('Belum ada data pesanan untuk diekspor. Silakan muat pesanan terlebih dahulu.');
+    return;
+  }
+  const head = ['id', 'kode', 'antrean', 'tipe', 'meja', 'waktu', 'pelanggan', 'telepon', 'item', 'catatan', 'metode_bayar', 'status_bayar', 'status_pesanan', 'subtotal', 'diskon', 'biaya_layanan', 'total'];
+  const lines = [head.join(';')].concat(rows.map((o) => {
+    const itemTxt = (o.items || []).map((it) => it.qty + 'x ' + it.menu_name + (it.level ? ' (' + it.level + ')' : '')).join(', ');
+    const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
+    return [
+      o.id,
+      o.code,
+      o.queue_no || '',
+      isDineIn ? 'Dine-In' : 'Takeaway',
+      o.table_no || '',
+      o.created_at || '',
+      o.customer_name || '',
+      o.customer_phone || '',
+      itemTxt,
+      o.note || '',
+      o.payment_method || '',
+      o.payment_status || '',
+      ST_LABEL[o.status] || o.status || '',
+      o.subtotal || 0,
+      o.discount || 0,
+      o.service_fee || 0,
+      o.total || 0
+    ].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';');
+  }));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pesanan-' + (new Date().toISOString().slice(0, 10)) + '.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
 function exportLaporanCSV() {
   const L = LAPORAN_CACHE;
   if (!L || !(L.detail && L.detail.length)) { alert('Belum ada rincian transaksi untuk diekspor. Tampilkan laporan dulu.'); return; }
@@ -256,7 +306,14 @@ function printLaporan() {
   window.print();
   setTimeout(() => document.body.classList.remove('p-laporan'), 500);
 }
-async function setSt(id, status) { await apiPost({ action: 'adminUpdateOrder', token: token(), id, status }); loadOrders(); loadStats(); }
+async function setSt(id, status) {
+  if (status === 'dibatalkan') {
+    if (!confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini? Stok menu yang telah terpotong akan otomatis dikembalikan.')) return;
+  }
+  await apiPost({ action: 'adminUpdateOrder', token: token(), id, status });
+  loadOrders();
+  loadStats();
+}
 async function setPay(id, payment_status) { await apiPost({ action: 'adminUpdateOrder', token: token(), id, payment_status }); loadOrders(); loadStats(); }
 async function loadMenu() {
   try {
