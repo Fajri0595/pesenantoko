@@ -1,5 +1,5 @@
 // Service Worker: Network-first untuk skrip & config dinamis, Cache-first untuk aset statis (ikon/manifest).
-const CACHE = 'umkm-mandiri-v2';
+const CACHE = 'umkm-mandiri-v3';
 const SHELL = ['./', './index.html', './style.css', './app.js', './api.js', './foodimg.js', './favicon.svg', './manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

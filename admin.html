@@ -20,14 +20,21 @@
     <p class="muted">Gunakan kredensial dari Script Properties (<b>ADMIN_USER</b> / <b>ADMIN_PASS</b>).</p>
   </div>
   <div id="main" style="display:none">
-    <div class="sec"><div><h2>Dashboard</h2><p>Ringkasan operasional hari ini.</p></div></div>
+    <div class="sec"><div><h2>Dashboard Operasional</h2><p>Pantau performa penjualan dan antrean secara real-time.</p></div></div>
     <div class="stat-grid" id="stats"></div>
-    <div class="tabs">
-      <button class="btn sm" onclick="tab('orders')">Pesanan</button>
-      <button class="btn sm ghost" onclick="tab('menu')">Katalog Menu</button>
-      <button class="btn sm ghost" onclick="tab('laporan')">Laporan Penjualan</button>
-      <button class="btn sm ghost" onclick="tab('setting')">Pengaturan Toko</button>
-      <select id="fstat" onchange="ordersPage = 1; loadOrders()" style="margin-left:auto;max-width:220px" aria-label="Filter status">
+    <div class="admin-tabs-nav">
+      <button class="adm-tab on" id="tabBtn-orders" onclick="tab('orders')">📋 Pesanan Aktif</button>
+      <button class="adm-tab" id="tabBtn-menu" onclick="tab('menu')">🍲 Katalog Menu</button>
+      <button class="adm-tab" id="tabBtn-laporan" onclick="tab('laporan')">📈 Laporan Penjualan</button>
+      <button class="adm-tab" id="tabBtn-setting" onclick="tab('setting')">⚙️ Pengaturan Toko</button>
+    </div>
+
+    <!-- Toolbar khusus untuk Pesanan -->
+    <div class="admin-toolbar" id="tbOrders">
+      <div class="search" style="max-width:260px">
+        <input id="fq" type="text" placeholder="Cari kode / nama / HP..." oninput="loadOrdersDebounced()">
+      </div>
+      <select id="fstat" onchange="ordersPage = 1; loadOrders()" style="max-width:210px" aria-label="Filter status">
         <option value="">Semua Status</option>
         <option value="menunggu_pembayaran">Menunggu Pembayaran</option>
         <option value="dimasak">Sedang Dimasak</option>
@@ -36,30 +43,90 @@
         <option value="dibatalkan">Dibatalkan</option>
         <option value="kedaluwarsa">Kedaluwarsa</option>
       </select>
-      <input id="fq" type="text" placeholder="Cari kode / nama / HP..." style="max-width:220px" oninput="loadOrdersDebounced()">
-      <button class="btn sm" onclick="loadOrders();loadStats()">🔄 Refresh</button>
-      <button class="btn sm ghost" onclick="exportOrdersCSV()">Export CSV</button>
-    </div>
-    <div id="vOrders"></div>
-    <div id="vMenu" style="display:none">
-      <div class="sec"><div><h2>Katalog Menu</h2><p>Tambah, ubah, atau nonaktifkan menu dengan mudah. Kolom foto mendukung URL gambar langsung.</p></div></div>
-      <div class="box">
-        <input id="mid" type="hidden">
-        <div class="row">
-          <div style="flex:2;min-width:180px"><label>Nama Menu</label><input id="mname" type="text" placeholder="Contoh: Mie Level 4"></div>
-          <div style="flex:1;min-width:140px"><label>Kategori</label><input id="mcat" type="text" placeholder="Mie / Dimsum / Minuman"></div>
-        </div>
-        <div class="row">
-          <div style="flex:1"><label>Harga (Rp)</label><input id="mprice" type="number" value="11000" min="0"></div>
-          <div style="flex:1"><label>Stok (-1 = Tanpa Batas)</label><input id="mstok" type="number" value="-1"></div>
-          <div style="flex:1"><label>Ketersediaan</label><select id="mavail"><option value="1">Tersedia</option><option value="0">Nonaktif</option></select></div>
-        </div>
-        <label>Foto (URL Langsung, Opsional)</label><input id="memoji" type="url" placeholder="https://... — kosongkan untuk menggunakan foto otomatis">
-        <label>Deskripsi Singkat</label><input id="mdesc" type="text" placeholder="Tulis deskripsi singkat yang menggugah selera...">
-        <div class="row" style="margin-top:10px"><button class="btn" onclick="saveMenu()">Simpan Menu</button>
-        <button class="btn ghost" onclick="resetForm()">Atur Ulang</button></div>
+      <div class="row" style="margin-left:auto">
+        <button class="btn sm" onclick="loadOrders();loadStats()">🔄 Refresh</button>
+        <button class="btn sm ghost" onclick="exportOrdersCSV()">📄 Export CSV</button>
       </div>
-      <div id="mlist" style="margin-top:12px"></div>
+    </div>
+
+    <div id="vOrders"></div>
+
+    <div id="vMenu" style="display:none">
+      <div class="sec"><div><h2>Katalog Menu & Ketersediaan</h2><p>Kelola menu, ketersediaan, stok, dan harga secara real-time.</p></div></div>
+      <div class="admin-split">
+        <!-- Kolom Kiri: Form Editor Menu -->
+        <div class="menu-editor-card">
+          <div class="card-head">
+            <h3 id="formMenuTitle" style="margin:0;font-size:16px">Tambah Menu Baru</h3>
+            <button class="btn sm ghost" onclick="resetForm()">Atur Ulang</button>
+          </div>
+          <input id="mid" type="hidden">
+          
+          <div class="menu-preview-box">
+            <img id="mImgPreview" class="menu-preview-img" src="" alt="Pratinjau" onerror="imgFallback(this)">
+            <div class="menu-preview-info">
+              <small class="muted">Pratinjau Tampilan Menu</small>
+              <b id="mPreviewName" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nama Menu Baru</b>
+              <span id="mPreviewPrice" style="color:var(--brand-d);font-weight:700">Rp11.000</span>
+            </div>
+          </div>
+
+          <label for="mname">Nama Menu</label>
+          <input id="mname" type="text" placeholder="Contoh: Mie Level 4" oninput="updateMenuPreview()">
+
+          <div class="row">
+            <div style="flex:1">
+              <label for="mcat">Kategori</label>
+              <input id="mcat" list="catList" type="text" placeholder="Mie / Dimsum / Minuman">
+              <datalist id="catList">
+                <option value="Mie"></option>
+                <option value="Dimsum"></option>
+                <option value="Minuman"></option>
+                <option value="Topping"></option>
+              </datalist>
+            </div>
+            <div style="flex:1">
+              <label for="mprice">Harga (Rp)</label>
+              <input id="mprice" type="number" value="11000" min="0" oninput="updateMenuPreview()">
+            </div>
+          </div>
+
+          <div class="row">
+            <div style="flex:1">
+              <label for="mstok">Stok (-1 = Bebas)</label>
+              <input id="mstok" type="number" value="-1">
+            </div>
+            <div style="flex:1">
+              <label for="mavail">Ketersediaan</label>
+              <select id="mavail">
+                <option value="1">Tersedia</option>
+                <option value="0">Nonaktif</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="memoji">Foto (URL Gambar)</label>
+          <input id="memoji" type="url" placeholder="https://... (kosong = foto otomatis)" oninput="updateMenuPreview()">
+
+          <label for="mdesc">Deskripsi Singkat</label>
+          <input id="mdesc" type="text" placeholder="Tulis deskripsi singkat...">
+
+          <div class="row" style="margin-top:14px">
+            <button class="btn" style="flex:1" onclick="saveMenu()">💾 Simpan Menu</button>
+          </div>
+        </div>
+
+        <!-- Kolom Kanan: Daftar Tabel Menu -->
+        <div class="menu-list-panel">
+          <div class="menu-list-toolbar">
+            <input id="searchMenu" type="text" placeholder="Cari menu di katalog..." oninput="filterMenuTable()">
+            <select id="filterMenuCat" onchange="filterMenuTable()" style="max-width:180px">
+              <option value="">Semua Kategori</option>
+            </select>
+          </div>
+          <div id="mlist" style="margin-top:6px"></div>
+        </div>
+      </div>
     </div>
     <div id="vLaporan" style="display:none">
       <div class="sec"><div><h2>Laporan Penjualan</h2><p>Rekapitulasi penjualan harian, mingguan (7 hari terakhir), dan bulanan.</p></div></div>

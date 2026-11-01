@@ -57,17 +57,25 @@ function tab(t) {
   document.getElementById('vMenu').style.display = t === 'menu' ? 'block' : 'none';
   document.getElementById('vLaporan').style.display = t === 'laporan' ? 'block' : 'none';
   document.getElementById('vSetting').style.display = t === 'setting' ? 'block' : 'none';
-  document.getElementById('fstat').style.display = t === 'orders' ? 'block' : 'none';
+  const tbO = document.getElementById('tbOrders');
+  if (tbO) tbO.style.display = t === 'orders' ? 'flex' : 'none';
+  document.querySelectorAll('.adm-tab').forEach((b) => b.classList.remove('on'));
+  const activeBtn = document.getElementById('tabBtn-' + t);
+  if (activeBtn) activeBtn.classList.add('on');
+  if (t === 'orders') loadOrders();
+  if (t === 'menu') loadMenu();
   if (t === 'laporan') loadLaporan();
   if (t === 'setting') loadSettings();
 }
 async function loadStats() {
   try {
     const s = await apiGet('stats', { token: token() });
+    const totalMenu = (MENU_CACHE && MENU_CACHE.length) ? MENU_CACHE.length : '-';
     document.getElementById('stats').innerHTML =
-      `<div class="stat-card st-a"><b>${s.aktif}</b><span>pesanan aktif yang perlu diproses</span></div>` +
-      `<div class="stat-card st-b"><b>${s.hari_ini}</b><span>total pesanan hari ini</span></div>` +
-      `<div class="stat-card st-c"><b>${rp(s.omzet)}</b><span>estimasi omzet hari ini</span></div>`;
+      `<div class="stat-card st-a"><div class="row" style="justify-content:space-between"><b>${s.aktif}</b><span style="font-size:20px">📋</span></div><span>Pesanan Aktif Diproses</span></div>` +
+      `<div class="stat-card st-b"><div class="row" style="justify-content:space-between"><b>${s.hari_ini}</b><span style="font-size:20px">📦</span></div><span>Total Pesanan Hari Ini</span></div>` +
+      `<div class="stat-card st-c"><div class="row" style="justify-content:space-between"><b>${rp(s.omzet)}</b><span style="font-size:20px">💰</span></div><span>Estimasi Omzet Hari Ini</span></div>` +
+      `<div class="stat-card st-d"><div class="row" style="justify-content:space-between"><b>${totalMenu}</b><span style="font-size:20px">🍲</span></div><span>Total Menu di Katalog</span></div>`;
   } catch (e) {
     document.getElementById('stats').innerHTML = '<div class="warn">Ringkasan belum dapat dimuat: ' + e.message + '</div>';
   }
@@ -82,40 +90,60 @@ async function loadOrders(resetPage, silent) {
     const rows = await apiGet('adminOrders', Object.assign({ token: token() }, f ? { status: f } : {}));
     ORDERS_CACHE = rows;
     let list = rows;
-    if (q) list = list.filter((o) => [o.code, o.customer_name, o.customer_phone, o.queue_no].join(' ').toLowerCase().includes(q));
+    if (q) list = list.filter((o) => [o.code, o.customer_name, o.customer_phone, o.queue_no, o.table_no].join(' ').toLowerCase().includes(q));
     box.innerHTML = '';
     if (!list.length) { box.innerHTML = '<div class="empty">Belum ada pesanan pada filter ini.</div>'; return; }
     const totalPage = Math.max(1, Math.ceil(list.length / ORDERS_PER_PAGE));
     ordersPage = Math.max(1, Math.min(ordersPage, totalPage));
     const slice = list.slice((ordersPage - 1) * ORDERS_PER_PAGE, ordersPage * ORDERS_PER_PAGE);
+
+    const grid = document.createElement('div');
+    grid.className = 'orders-grid';
+
     slice.forEach((o) => {
       const d = document.createElement('div'); d.className = 'order-card';
-      const itemsTxt = (o.items || []).map((i) => esc(i.qty) + 'x ' + esc(i.menu_name) + (i.level ? ' [' + esc(i.level) + ']' : '')).join(', ');
       const isDineIn = o.order_type === 'dine_in' || /^DI-/i.test(o.queue_no || '');
       const modeBadge = isDineIn
         ? `<span class="badge" style="background:#e8f4ec;color:#2e7d4f">🍽️ DINE-IN ${o.table_no ? '(Meja ' + esc(o.table_no) + ')' : ''}</span>`
         : `<span class="badge" style="background:#f4ecda;color:#8f6b1d">🛍️ TAKEAWAY</span>`;
       const discTxt = Number(o.discount) > 0 ? ` • Diskon: -${rp(o.discount)}` : '';
 
-      d.innerHTML = `<div class="row" style="justify-content:space-between">
-        <div class="row" style="gap:8px"><b style="font-size:16px">${esc(o.code)}</b> ${modeBadge}</div>
-        <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${esc(o.payment_status)} • ${esc(ST_LABEL[o.status] || o.status)}</span></div>
-      <div class="meta" style="margin-top:4px">${esc(o.queue_no || '')} • <b>${esc(o.customer_name)}</b> (${esc(o.customer_phone || '-')}) • ${esc(o.payment_method)} • <b>${rp(o.total)}</b>${discTxt} • ${esc(o.created_at || '')}</div>
-      <div class="meta" style="font-weight:600;color:#2e2a23">${itemsTxt}${o.note ? ' • Catatan: <span style="color:#b97900">' + esc(o.note) + '</span>' : ''}</div>
-      <div class="row" style="margin-top:10px">
-      <button class="btn sm" data-act="dimasak" data-id="${o.id}">Proses Masak</button>
-      <button class="btn sm" data-act="siap_diambil" data-id="${o.id}">Siap Disajikan</button>
-      <button class="btn sm green" data-act="selesai" data-id="${o.id}">Selesaikan</button>
-      <button class="btn sm ghost" data-act="dibatalkan" data-id="${o.id}">Batalkan</button>
-      <button class="btn sm ghost" data-pay="paid" data-id="${o.id}">Tandai Lunas</button>
-      <button class="btn sm ghost" data-print="${o.id}">🖨️ Struk POS</button>
-      ${o.customer_phone ? `<button class="btn sm ghost" data-chat="${o.id}">💬 Chat WA</button>` : ''}
-      </div>`;
-      box.appendChild(d);
+      const itemsListHtml = (o.items || []).map((i) =>
+        `<div><span class="order-item-badge">${esc(i.qty)}x</span> <b>${esc(i.menu_name)}</b> ${i.level ? '<span style="color:#b97900">[' + esc(i.level) + ']</span>' : ''}</div>`
+      ).join('');
+
+      d.innerHTML = `
+        <div class="row" style="justify-content:space-between;margin-bottom:6px">
+          <div class="row" style="gap:8px">
+            <b style="font-size:17px;color:var(--brand-d)">${esc(o.code)}</b>
+            <span style="font-weight:800;color:#6f675c">${esc(o.queue_no || '')}</span>
+            ${modeBadge}
+          </div>
+          <span class="badge ${o.payment_status === 'paid' ? 'paid' : 'pending'}">${esc(o.payment_status).toUpperCase()} • ${esc(ST_LABEL[o.status] || o.status)}</span>
+        </div>
+        <div class="meta" style="margin:2px 0 6px">
+          <b>${esc(o.customer_name)}</b> (${esc(o.customer_phone || '-')}) • ${esc(o.payment_method)} • <b style="color:var(--brand-d)">${rp(o.total)}</b>${discTxt} • <small>${esc(o.created_at || '')}</small>
+        </div>
+        <div class="items-list">
+          ${itemsListHtml}
+          ${o.note ? '<div style="margin-top:4px;color:#b97900;font-weight:600">Catatan: ' + esc(o.note) + '</div>' : ''}
+        </div>
+        <div class="row" style="margin-top:auto;gap:6px;padding-top:10px;border-top:1px dashed var(--line)">
+          <button class="btn sm" data-act="dimasak" data-id="${o.id}">Proses Masak</button>
+          <button class="btn sm" data-act="siap_diambil" data-id="${o.id}">Siap Disajikan</button>
+          <button class="btn sm green" data-act="selesai" data-id="${o.id}">Selesaikan</button>
+          <button class="btn sm ghost" data-act="dibatalkan" data-id="${o.id}">Batalkan</button>
+          <button class="btn sm ghost" data-pay="paid" data-id="${o.id}">Tandai Lunas</button>
+          <button class="btn sm ghost" data-print="${o.id}">🖨️ Struk POS</button>
+          ${o.customer_phone ? `<button class="btn sm ghost" data-chat="${o.id}">💬 Chat WA</button>` : ''}
+        </div>`;
+      grid.appendChild(d);
     });
+    box.appendChild(grid);
+
     const nav = document.createElement('div');
     nav.className = 'row';
-    nav.style.margin = '12px 0';
+    nav.style.margin = '16px 0';
     nav.innerHTML = `<span class="muted">Hal ${ordersPage}/${totalPage} • ${list.length} pesanan</span>
       <button class="btn sm ghost" ${ordersPage <= 1 ? 'disabled' : ''} id="pgPrev">← Prev</button>
       <button class="btn sm ghost" ${ordersPage >= totalPage ? 'disabled' : ''} id="pgNext">Next →</button>`;
@@ -315,34 +343,100 @@ async function setSt(id, status) {
   loadStats();
 }
 async function setPay(id, payment_status) { await apiPost({ action: 'adminUpdateOrder', token: token(), id, payment_status }); loadOrders(); loadStats(); }
+function updateMenuPreview() {
+  const name = (document.getElementById('mname')?.value || '').trim() || 'Nama Menu Baru';
+  const price = parseInt(document.getElementById('mprice')?.value) || 0;
+  const foto = (document.getElementById('memoji')?.value || '').trim();
+  const cat = (document.getElementById('mcat')?.value || '').trim();
+  const pName = document.getElementById('mPreviewName');
+  if (pName) pName.textContent = name;
+  const pPrice = document.getElementById('mPreviewPrice');
+  if (pPrice) pPrice.textContent = rp(price);
+  const pImg = document.getElementById('mImgPreview');
+  if (pImg) pImg.src = foto || foodImg({ name, category: cat });
+}
+
+function filterMenuTable() {
+  const q = (document.getElementById('searchMenu')?.value || '').toLowerCase().trim();
+  const cat = document.getElementById('filterMenuCat')?.value || '';
+  let list = MENU_CACHE || [];
+  if (q) list = list.filter((m) => String(m.name || '').toLowerCase().includes(q) || String(m.category || '').toLowerCase().includes(q));
+  if (cat) list = list.filter((m) => m.category === cat);
+  renderMenuList(list);
+}
+
+function renderMenuList(rows) {
+  const box = document.getElementById('mlist');
+  if (!box) return;
+  if (!rows || !rows.length) {
+    box.innerHTML = '<div class="empty">Tidak ada menu yang sesuai kriteria.</div>';
+    return;
+  }
+  box.innerHTML = '<div class="box" style="padding:0;overflow:auto;box-shadow:none;border:none"><table style="font-size:13px"><tr><th>Foto</th><th>Nama Menu</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th></tr>' +
+    rows.map((m) => `<tr>
+      <td><img class="menu-thumb" style="width:48px;height:48px;border-radius:8px" src="${esc(foodImg(m))}" alt="${esc(m.name)}" loading="lazy" onerror="imgFallback(this)"></td>
+      <td><b>${esc(m.name)}</b>${m.description ? '<br><small class="muted">' + esc(m.description) + '</small>' : ''}</td>
+      <td><span class="badge">${esc(m.category)}</span></td>
+      <td><b>${rp(m.price)}</b></td>
+      <td>${(m.stok === '' || m.stok === undefined || m.stok === null || Number(m.stok) === -1) ? '<span class="badge paid">∞ Bebas</span>' : (Number(m.stok) === 0 ? '<span class="badge pending" style="background:#fce8e6;color:#c5221f">Habis (0)</span>' : '<span class="badge">' + esc(m.stok) + ' porsi</span>')}</td>
+      <td><span class="badge ${m.is_available ? 'paid' : 'pending'}">${m.is_available ? 'Tersedia' : 'Nonaktif'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm ghost" data-edit="${m.id}">Ubah</button>
+        <button class="btn sm ghost" style="color:#d9534f" data-del="${m.id}">Hapus</button>
+      </td></tr>`).join('') + '</table></div>';
+  box.querySelectorAll('button[data-edit]').forEach((b) => b.onclick = () => editMById(Number(b.dataset.edit)));
+  box.querySelectorAll('button[data-del]').forEach((b) => b.onclick = () => delM(Number(b.dataset.del)));
+}
+
 async function loadMenu() {
   try {
     const rows = await apiGet('adminMenu', { token: token() });
     MENU_CACHE = rows;
-    document.getElementById('mlist').innerHTML = '<div class="box" style="padding:0;overflow:auto"><table><tr><th>Foto</th><th>Nama Menu</th><th>Harga</th><th>Stok</th><th>Kategori</th><th>Status</th><th>Aksi</th></tr>' +
-      rows.map((m) => `<tr><td><img class="menu-thumb" src="${esc(foodImg(m))}" alt="${esc(m.name)}" loading="lazy" onerror="imgFallback(this)"></td>
-      <td><b>${esc(m.name)}</b></td><td>${rp(m.price)}</td><td>${(m.stok === '' || m.stok === undefined || m.stok === null || Number(m.stok) === -1) ? '∞' : esc(m.stok)}</td><td>${esc(m.category)}</td>
-      <td><span class="badge ${m.is_available ? 'paid' : 'pending'}">${m.is_available ? 'Tersedia' : 'Nonaktif'}</span></td>
-      <td style="white-space:nowrap"><button class="btn sm ghost" data-edit="${m.id}">Ubah</button> <button class="btn sm ghost" data-del="${m.id}">Hapus</button></td></tr>`).join('') + '</table></div>';
-    document.querySelectorAll('#mlist button[data-edit]').forEach((b) => b.onclick = () => editMById(Number(b.dataset.edit)));
-    document.querySelectorAll('#mlist button[data-del]').forEach((b) => b.onclick = () => delM(Number(b.dataset.del)));
-  } catch (e) { document.getElementById('mlist').innerHTML = '<div class="warn">' + esc(e.message) + '</div>'; }
+    const catSel = document.getElementById('filterMenuCat');
+    if (catSel) {
+      const cats = Array.from(new Set(rows.map((m) => m.category).filter(Boolean))).sort();
+      catSel.innerHTML = '<option value="">Semua Kategori</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    }
+    filterMenuTable();
+    updateMenuPreview();
+    loadStats();
+  } catch (e) {
+    document.getElementById('mlist').innerHTML = '<div class="warn">' + esc(e.message) + '</div>';
+  }
 }
+
 function editMById(id) {
   const m = MENU_CACHE.find((x) => Number(x.id) === Number(id));
   if (!m) return;
   editM(m);
 }
 function editM(m) {
-  document.getElementById('mid').value = m.id; document.getElementById('mname').value = m.name;
-  document.getElementById('mcat').value = m.category; document.getElementById('mprice').value = m.price;
+  document.getElementById('mid').value = m.id;
+  document.getElementById('mname').value = m.name;
+  document.getElementById('mcat').value = m.category;
+  document.getElementById('mprice').value = m.price;
   document.getElementById('memoji').value = (m.emoji && m.emoji.indexOf('http') === 0) ? m.emoji : '';
   document.getElementById('mdesc').value = m.description || '';
   const st = (m.stok === '' || m.stok === undefined || m.stok === null) ? -1 : m.stok;
   document.getElementById('mstok').value = st;
-  document.getElementById('mavail').value = m.is_available ? 1 : 0; window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('mavail').value = m.is_available ? 1 : 0;
+  const title = document.getElementById('formMenuTitle');
+  if (title) title.textContent = '✏️ Ubah Menu: ' + m.name;
+  updateMenuPreview();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-function resetForm() { document.getElementById('mid').value = ''; document.getElementById('mname').value = ''; document.getElementById('mprice').value = 11000; document.getElementById('memoji').value = ''; document.getElementById('mstok').value = -1; }
+
+function resetForm() {
+  document.getElementById('mid').value = '';
+  document.getElementById('mname').value = '';
+  document.getElementById('mprice').value = 11000;
+  document.getElementById('memoji').value = '';
+  document.getElementById('mstok').value = -1;
+  document.getElementById('mdesc').value = '';
+  const title = document.getElementById('formMenuTitle');
+  if (title) title.textContent = 'Tambah Menu Baru';
+  updateMenuPreview();
+}
 async function saveMenu() {
   const id = document.getElementById('mid').value;
   const foto = document.getElementById('memoji').value.trim();

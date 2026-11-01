@@ -302,3 +302,401 @@ body.tv .sla{font-size:14px;padding:6px 12px}
   body.p-struk #strukPrint{display:block !important;font-family:'Courier New',Courier,monospace !important;font-size:12px !important;max-width:72mm;margin:0 auto}
 }
 
+/* ==============================================================
+   ADMIN & KDS TV DISPLAY OVERHAUL
+   ============================================================== */
+
+/* Admin Tabs & Toolbar */
+.admin-tabs-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 10px;
+  margin: 16px 0 14px;
+  flex-wrap: wrap;
+}
+.adm-tab {
+  background: #fff;
+  border: 1.5px solid var(--line);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 9px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.adm-tab:hover {
+  background: var(--brand-soft);
+  color: var(--brand-d);
+  border-color: var(--brand);
+}
+.adm-tab.on {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+  box-shadow: 0 4px 14px rgba(62, 107, 79, 0.28);
+}
+.admin-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.st-d { background: linear-gradient(135deg, #714b82, #472b53); }
+
+/* Admin Split Layout for Menu Editor & List */
+.admin-split {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .admin-split { grid-template-columns: 1fr; }
+}
+.menu-editor-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 76px;
+}
+.menu-editor-card .card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.menu-preview-box {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #fbf7ee;
+  border: 1.5px dashed var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.menu-preview-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #ece5d3;
+  flex-shrink: 0;
+}
+.menu-preview-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.menu-list-panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+.menu-list-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.menu-list-toolbar input { flex: 1; min-width: 180px; }
+
+/* Orders Grid in Admin */
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .orders-grid { grid-template-columns: 1fr; }
+}
+.order-card {
+  background: #fffdf9;
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.order-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+.order-card .items-list {
+  background: #faf6ed;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.order-item-badge {
+  display: inline-block;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-weight: 700;
+  color: var(--brand-d);
+  margin-right: 6px;
+}
+
+/* ==============================================================
+   TV ANTREAN & KITCHEN DISPLAY SYSTEM (KDS)
+   ============================================================== */
+.tv-wrap {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 14px 18px 40px;
+}
+
+/* TV Process Stepper */
+.tv-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.tv-step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.tv-step-item.active {
+  color: var(--brand-d);
+}
+.tv-step-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ece7d9;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #6b6257;
+  flex-shrink: 0;
+}
+.tv-step-item.active .tv-step-circle {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(62, 107, 79, 0.3);
+}
+
+/* TV Board Split Screen */
+.tv-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  min-height: 580px;
+}
+@media (max-width: 860px) {
+  .tv-split { grid-template-columns: 1fr; }
+  .tv-stepper { grid-template-columns: 1fr 1fr; }
+}
+.tv-col {
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+.tv-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 16px;
+}
+.tv-col-head h2 {
+  margin: 0;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+.tv-col-prep {
+  border-color: #dfbf74;
+  background: linear-gradient(180deg, #fdfaf2 0%, #fff 100%);
+}
+.tv-col-prep h2 { color: #8a6a1a; }
+.tv-col-ready {
+  border-color: #8ed0a8;
+  background: linear-gradient(180deg, #f2faf4 0%, #fff 100%);
+}
+.tv-col-ready h2 { color: #1e5234; }
+.tv-badge-count {
+  font-size: 18px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+}
+.tv-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  overflow: auto;
+  align-content: start;
+  flex: 1;
+}
+.tv-card {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+.tv-card-no {
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: var(--ink);
+  margin: 6px 0;
+  font-variant-numeric: tabular-nums;
+}
+.tv-card.prep .tv-card-no { color: #8a6a1a; }
+.tv-card.ready {
+  border-color: var(--green);
+  box-shadow: 0 6px 20px rgba(46, 125, 79, 0.22);
+}
+.tv-card.ready .tv-card-no { color: var(--green); }
+.tv-card.calling {
+  border-color: #d97706;
+  background: #fffbe8;
+  animation: pulse-calling 1s infinite alternate;
+}
+.tv-card-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tv-card-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.tv-call-banner {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: linear-gradient(135deg, #1b3d27, #2c593a);
+  color: #fff;
+  border: 3.5px solid #ffd066;
+  border-radius: 26px;
+  padding: 20px 42px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  animation: banner-drop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  min-width: 420px;
+  max-width: 92vw;
+}
+.tv-call-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffd066;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.tv-call-no {
+  font-size: 58px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin: 6px 0;
+  color: #fff;
+}
+.tv-call-info {
+  font-size: 20px;
+  font-weight: 700;
+  opacity: 0.95;
+}
+.tv-marquee {
+  background: var(--brand-d);
+  color: #f7eedc;
+  padding: 11px 18px;
+  border-radius: 14px;
+  font-size: 14.5px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-top: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* KDS Kitchen 3-Column Kanban */
+.kds-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1040px) {
+  .kds-board { grid-template-columns: 1fr; }
+}
+.kds-col {
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+.kds-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 14px;
+}
+.kds-col-head h3 { margin: 0; font-size: 18px; font-weight: 800; }
+.kds-col-masuk { border-top: 6px solid #6b8299; }
+.kds-col-masak { border-top: 6px solid #d97706; }
+.kds-col-siap { border-top: 6px solid #2e7d4f; }
+
+
